@@ -1,4 +1,4 @@
-# Progress Log
+﻿# Progress Log
 
 Use this file as the chronological implementation log. Each future Codex
 target should append one entry before closeout.
@@ -57,3 +57,44 @@ Next:
 
 - Continue with `PLAN-004` (ontology contract upgrade) using the same task order
   and validation rules.
+
+## 2026-06-24 - Phase 0 Contract Upgrade (SCHEMA-001)
+
+Task:
+
+- Upgrade `configs/ontology.yaml` to define A/B/C node and relation contracts, plus
+  layer-aware properties for reproducible graph construction and quality checks.
+
+Commands run:
+
+- Read source-of-truth files:
+  `AGENTS.md`, `docs/project_plan.md`, `TASKS.md`, `docs/progress_log.md`,
+  `docs/architecture.md`, `configs/ontology.yaml`, `configs/intents.yaml`,
+  `data/source_manifest.yaml`.
+- Rewrote `configs/ontology.yaml` with:
+  - A/B/C layered node definitions
+  - Domain/range constrained relations for each layer
+  - Required node and edge properties with layer/version fields
+  - Evidence-required relation metadata and raw-relation mapping updates
+
+Result:
+
+- `SCHEMA-001` set to DONE.
+- Contract now aligns with project architecture and includes the required layer-aware
+  schema fields.
+- Verified with:
+  - `python --version` -> Python 3.12.7
+  - `pyyaml_available= True`
+  - `ontology_loaded= True`
+  - `version= 0.2.0`
+  - `node_types= 32`
+  - `relations= 32`
+
+Blockers:
+
+- No blockers within this config task.
+
+Next:
+
+- Next task: `QA-CONTRACT-001` (intent contract upgrade).
+

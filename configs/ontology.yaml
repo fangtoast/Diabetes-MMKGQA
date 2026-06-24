@@ -1,70 +1,239 @@
-version: 0.1.0
-project_domain: diabetes_and_diabetic_retinopathy
+﻿version: 0.2.0
+project_domain: diabetes_hypertension_pneumonia_retinopathy
 
 node_types:
-  # DiaKG-derived medical types
-  Disease: {name_zh: 疾病}
-  DiseaseClass: {name_zh: 疾病分期分型}
-  Etiology: {name_zh: 病因}
-  Pathogenesis: {name_zh: 发病机制}
-  Symptom: {name_zh: 临床表现}
-  Test: {name_zh: 检查方法}
-  TestItem: {name_zh: 检查指标}
-  TestValue: {name_zh: 检查指标值}
-  Drug: {name_zh: 药物}
-  DoseFrequency: {name_zh: 用药频率}
-  DoseAmount: {name_zh: 用药剂量}
-  AdministrationMethod: {name_zh: 用药方法}
-  NonDrugTreatment: {name_zh: 非药治疗}
-  Operation: {name_zh: 手术}
-  AdverseEffect: {name_zh: 不良反应}
-  Anatomy: {name_zh: 部位}
-  SeverityLevel: {name_zh: 程度}
-  Duration: {name_zh: 持续时间}
+  # A: General medical layer
+  Symptom:
+    name_zh: 症状
+    knowledge_layer: A
+  Test:
+    name_zh: 检查
+    knowledge_layer: A
+  TestItem:
+    name_zh: 检查项
+    knowledge_layer: A
+  Drug:
+    name_zh: 药物
+    knowledge_layer: A
+  AdverseEffect:
+    name_zh: 不良反应
+    knowledge_layer: A
+  Anatomy:
+    name_zh: 解剖
+    knowledge_layer: A
+  BodySystem:
+    name_zh: 身体系统
+    knowledge_layer: A
+  SeverityLevel:
+    name_zh: 严重程度
+    knowledge_layer: A
+  DoseFrequency:
+    name_zh: 用药频率
+    knowledge_layer: A
+  DoseAmount:
+    name_zh: 用药剂量
+    knowledge_layer: A
+  Duration:
+    name_zh: 用药持续时间
+    knowledge_layer: A
+  AdministrationMethod:
+    name_zh: 用药方式
+    knowledge_layer: A
+  NonDrugTreatment:
+    name_zh: 非药物治疗
+    knowledge_layer: A
+  Operation:
+    name_zh: 手术
+    knowledge_layer: A
 
-  # Provenance and multimodal types
-  Document: {name_zh: 文档}
-  EvidenceChunk: {name_zh: 证据片段}
-  Image: {name_zh: 医学图像}
-  ImageGrade: {name_zh: 图像分级}
-  Dataset: {name_zh: 数据集}
-  DataSplit: {name_zh: 数据划分}
+  # B: Standards and rules layer
+  ICD_Code:
+    name_zh: ICD 编码
+    knowledge_layer: B
+  Guideline:
+    name_zh: 指南
+    knowledge_layer: B
+  StandardRule:
+    name_zh: 标准规则
+    knowledge_layer: B
+  ReferenceRange:
+    name_zh: 参考范围
+    knowledge_layer: B
+  DiagnosticThreshold:
+    name_zh: 诊断阈值
+    knowledge_layer: B
+  Unit:
+    name_zh: 计量单位
+    knowledge_layer: B
+
+  # C: Disease application layer
+  Disease:
+    name_zh: 病种
+    knowledge_layer: C
+  DiseaseClass:
+    name_zh: 病种类型
+    knowledge_layer: C
+  Etiology:
+    name_zh: 病因
+    knowledge_layer: C
+  Pathogenesis:
+    name_zh: 发病机制
+    knowledge_layer: C
+  DiseaseStage:
+    name_zh: 分期
+    knowledge_layer: C
+  CaseSample:
+    name_zh: 病例样本
+    knowledge_layer: C
+  Image:
+    name_zh: 医学影像
+    knowledge_layer: C
+  ImageGrade:
+    name_zh: 影像分级
+    knowledge_layer: C
+  Dataset:
+    name_zh: 数据集
+    knowledge_layer: C
+  DataSplit:
+    name_zh: 数据拆分
+    knowledge_layer: C
+
+  # Provenance / evidence
+  Document:
+    name_zh: 文档
+    knowledge_layer: C
+  EvidenceChunk:
+    name_zh: 证据片段
+    knowledge_layer: C
 
 relations:
-  HAS_CLASS: {domain: [Disease], range: [DiseaseClass]}
-  HAS_CAUSE: {domain: [Disease], range: [Etiology]}
-  HAS_PATHOGENESIS: {domain: [Disease], range: [Pathogenesis]}
-  HAS_SYMPTOM: {domain: [Disease], range: [Symptom]}
-  RECOMMENDS_TEST: {domain: [Disease], range: [Test]}
-  HAS_TEST_ITEM: {domain: [Disease], range: [TestItem]}
-  TREATED_BY_DRUG: {domain: [Disease], range: [Drug]}
-  TREATED_BY_NONDRUG: {domain: [Disease], range: [NonDrugTreatment]}
-  TREATED_BY_OPERATION: {domain: [Disease], range: [Operation]}
-  AFFECTS_ANATOMY: {domain: [Disease], range: [Anatomy]}
-  HAS_ADVERSE_EFFECT: {domain: [Drug], range: [AdverseEffect]}
-  HAS_DOSE_AMOUNT: {domain: [Drug], range: [DoseAmount]}
-  HAS_ADMIN_METHOD: {domain: [Drug], range: [AdministrationMethod]}
-  HAS_DOSE_FREQUENCY: {domain: [Drug], range: [DoseFrequency]}
-  HAS_DURATION: {domain: [Drug], range: [Duration]}
+  # A layer relations
+  HAS_SYMPTOM:
+    domain: [Disease]
+    range: [Symptom]
+  HAS_CAUSE:
+    domain: [Disease]
+    range: [Etiology]
+  HAS_PATHOGENESIS:
+    domain: [Disease]
+    range: [Pathogenesis]
+  RECOMMENDS_TEST:
+    domain: [Disease]
+    range: [Test]
+  HAS_TEST_ITEM:
+    domain: [Disease]
+    range: [TestItem]
+  TREATED_BY_DRUG:
+    domain: [Disease]
+    range: [Drug]
+  TREATED_BY_NONDRUG:
+    domain: [Disease]
+    range: [NonDrugTreatment]
+  TREATED_BY_OPERATION:
+    domain: [Disease]
+    range: [Operation]
+  AFFECTS_ANATOMY:
+    domain: [Disease]
+    range: [Anatomy]
+  HAS_ADVERSE_EFFECT:
+    domain: [Drug]
+    range: [AdverseEffect]
+  HAS_DOSE_AMOUNT:
+    domain: [Drug]
+    range: [DoseAmount]
+  HAS_ADMIN_METHOD:
+    domain: [Drug]
+    range: [AdministrationMethod]
+  HAS_DOSE_FREQUENCY:
+    domain: [Drug]
+    range: [DoseFrequency]
+  HAS_DURATION:
+    domain: [Drug]
+    range: [Duration]
+  IS_A:
+    domain: ['*']
+    range: ['*']
+  HAS_CLASS:
+    domain: [Disease]
+    range: [DiseaseClass]
 
-  MENTIONED_IN: {domain: ['*'], range: [EvidenceChunk]}
-  PART_OF_DOCUMENT: {domain: [EvidenceChunk], range: [Document]}
-  IMAGE_ASSOCIATED_WITH: {domain: [Image], range: [Disease]}
-  HAS_IMAGE_GRADE: {domain: [Image], range: [ImageGrade]}
-  FROM_DATASET: {domain: [Image], range: [Dataset]}
-  IN_SPLIT: {domain: [Image], range: [DataSplit]}
-  IS_A: {domain: ['*'], range: ['*']}
+  # B layer relations
+  HAS_ICD_CODE:
+    domain: [Disease]
+    range: [ICD_Code]
+  GOVERNED_BY:
+    domain: [Disease]
+    range: [Guideline]
+  HAS_STANDARD_RULE:
+    domain: [Guideline]
+    range: [StandardRule]
+  HAS_REFERENCE_RANGE:
+    domain: [TestItem]
+    range: [ReferenceRange]
+  HAS_UNIT:
+    domain: [TestItem, Drug]
+    range: [Unit]
+  HAS_DIAGNOSTIC_THRESHOLD:
+    domain: [TestItem]
+    range: [DiagnosticThreshold]
+  APPLIES_TO:
+    domain: [StandardRule]
+    range: [Disease]
+  FROM_GUIDELINE:
+    domain: [StandardRule]
+    range: [Guideline]
+
+  # C layer relations
+  IMAGE_ASSOCIATED_WITH:
+    domain: [Image]
+    range: [Disease]
+  HAS_IMAGE_GRADE:
+    domain: [Image]
+    range: [ImageGrade]
+  FROM_DATASET:
+    domain: [Image]
+    range: [Dataset]
+  IN_SPLIT:
+    domain: [Image]
+    range: [DataSplit]
+  HAS_CASE:
+    domain: [Disease]
+    range: [CaseSample]
+  HAS_STAGE:
+    domain: [Disease]
+    range: [DiseaseStage]
+
+  # Provenance and traceability
+  MENTIONED_IN:
+    domain: ['*']
+    range: [EvidenceChunk]
+  PART_OF_DOCUMENT:
+    domain: [EvidenceChunk]
+    range: [Document]
 
 required_node_properties:
   - node_id
   - node_type
   - canonical_name
+  - knowledge_layer
+  - source_ids
+  - kg_version
 
 required_edge_properties:
   - edge_id
+  - head_id
+  - relation
+  - tail_id
   - source_id
   - extraction_method
   - confidence
+  - knowledge_layer
+  - kg_version
+
+required_evidence_relation_properties:
+  - evidence_id
+  - raw_relation
+  - normalized_relation
 
 raw_relation_mapping:
   Class_Disease: {normalized: HAS_CLASS, reverse: true}
@@ -82,3 +251,15 @@ raw_relation_mapping:
   Method_Drug: {normalized: HAS_ADMIN_METHOD, reverse: true}
   Frequency_Drug: {normalized: HAS_DOSE_FREQUENCY, reverse: true}
   Duration_Drug: {normalized: HAS_DURATION, reverse: true}
+  ICD_Disease: {normalized: HAS_ICD_CODE, reverse: true}
+  Guideline_Disease: {normalized: APPLIES_TO, reverse: true}
+  TestItem_ReferenceRange: {normalized: HAS_REFERENCE_RANGE, reverse: true}
+  TestItem_Unit: {normalized: HAS_UNIT, reverse: true}
+  Threshold_TestItem: {normalized: HAS_DIAGNOSTIC_THRESHOLD, reverse: true}
+  Image_Disease: {normalized: IMAGE_ASSOCIATED_WITH, reverse: true}
+  Disease_Stage: {normalized: HAS_STAGE, reverse: true}
+  Disease_Case: {normalized: HAS_CASE, reverse: true}
+  Grade_Image: {normalized: HAS_IMAGE_GRADE, reverse: true}
+  Image_Dataset: {normalized: FROM_DATASET, reverse: true}
+  Image_Split: {normalized: IN_SPLIT, reverse: true}
+  mention: {normalized: MENTIONED_IN, reverse: false}
