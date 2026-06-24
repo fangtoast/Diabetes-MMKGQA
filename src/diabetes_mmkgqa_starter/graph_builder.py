@@ -7,6 +7,7 @@ import csv
 import hashlib
 import json
 from dataclasses import dataclass
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, List
@@ -249,12 +250,19 @@ def _relation_counts(rows: list[dict]) -> dict[str, int]:
     return counts
 
 
-def _validate_graph_schema(ontology: dict, nodes: list[dict], edges: list[dict]) -> dict:
+def _validate_graph_schema(
+    ontology: dict,
+    nodes: list[dict],
+    edges: list[dict],
+    images: list[dict],
+    repo_root: Path,
+) -> dict:
     node_type_by_id: dict[str, str] = {row.get("node_id", ""): row.get("node_type", "") for row in nodes}
     relations_def = ontology.get("relations", {})
     required_node_properties = ontology.get("required_node_properties", [])
     required_edge_properties = ontology.get("required_edge_properties", [])
     required_evidence_properties = ontology.get("required_evidence_relation_properties", [])
+    unknown_relation_count = Counter()
 
     missing_node_properties: list[dict] = []
     for row in nodes:
@@ -277,19 +285,59 @@ def _validate_graph_schema(ontology: dict, nodes: list[dict], edges: list[dict])
                 missing_evidence_properties += 1
 
     relation_violations: list[dict] = []
+    missing_endpoint_edges: list[dict] = []
     for row in edges:
         relation = row.get("relation", "")
         relation_def = relations_def.get(relation)
         if not relation_def:
+            unknown_relation_count[relation] += 1
+            relation_violations.append(
+                {
+                    "edge_id": row.get("edge_id"),
+                    "relation": relation,
+                    "reason": "relation_not_in_ontology",
+                }
+            )
             continue
         head_type = node_type_by_id.get(row.get("head_id"), "")
         tail_type = node_type_by_id.get(row.get("tail_id"), "")
+        head_id = row.get("head_id", "")
+        tail_id = row.get("tail_id", "")
+        if not head_id or not tail_id:
+            missing_endpoint_edges.append(
+                {
+                    "edge_id": row.get("edge_id"),
+                    "relation": relation,
+                    "head_id": head_id,
+                    "tail_id": tail_id,
+                    "reason": "missing_head_or_tail_id",
+                }
+            )
+            continue
+        if head_id not in node_type_by_id:
+            missing_endpoint_edges.append(
+                {
+                    "edge_id": row.get("edge_id"),
+                    "relation": relation,
+                    "head_id": head_id,
+                    "reason": "missing_head_node",
+                }
+            )
+        if tail_id not in node_type_by_id:
+            missing_endpoint_edges.append(
+                {
+                    "edge_id": row.get("edge_id"),
+                    "relation": relation,
+                    "tail_id": tail_id,
+                    "reason": "missing_tail_node",
+                }
+            )
         domain = set(relation_def.get("domain", []))
         range_ = set(relation_def.get("range", []))
         if domain and "*" not in domain and head_type not in domain:
             relation_violations.append(
                 {
-                    "edge_id": row.get("edge_id"),
+                    "edge_id": row.get("edge_id", ""),
                     "relation": relation,
                     "reason": "head_type_mismatch",
                     "head_type": head_type,
@@ -299,13 +347,60 @@ def _validate_graph_schema(ontology: dict, nodes: list[dict], edges: list[dict])
         if range_ and "*" not in range_ and tail_type not in range_:
             relation_violations.append(
                 {
-                    "edge_id": row.get("edge_id"),
+                    "edge_id": row.get("edge_id", ""),
                     "relation": relation,
                     "reason": "tail_type_mismatch",
                     "tail_type": tail_type,
                     "allowed_range": sorted(range_),
                 }
             )
+
+    duplicate_node_ids = [
+        {"node_id": node_id, "count": count}
+        for node_id, count in Counter((row.get("node_id", "") for row in nodes if row.get("node_id", ""))).items()
+        if count > 1
+    ]
+    duplicate_edge_ids = [
+        {"edge_id": edge_id, "count": count}
+        for edge_id, count in Counter((row.get("edge_id", "") for row in edges if row.get("edge_id", ""))).items()
+        if count > 1
+    ]
+    self_loops = [
+        {
+            "edge_id": row.get("edge_id", ""),
+            "head_tail": row.get("head_id", ""),
+            "relation": row.get("relation", ""),
+        }
+        for row in edges
+        if row.get("head_id", "") and row.get("head_id", "") == row.get("tail_id", "")
+    ]
+
+    image_path_violations: list[dict] = []
+    for row in images:
+        rel_path = str(row.get("relative_path", "")).strip()
+        if not rel_path:
+            continue
+        rel_path_obj = Path(rel_path)
+        if rel_path_obj.is_absolute():
+            image_path_violations.append(
+                {
+                    "image_id": row.get("image_id", ""),
+                    "relative_path": rel_path,
+                    "reason": "absolute_path",
+                }
+            )
+            continue
+        candidate = (repo_root / rel_path_obj).resolve()
+        if not candidate.exists():
+            image_path_violations.append(
+                {
+                    "image_id": row.get("image_id", ""),
+                    "relative_path": rel_path,
+                    "reason": "file_not_found",
+                }
+            )
+
+    unknown_relation_counts = [{"relation": rel, "count": count} for rel, count in unknown_relation_count.items()]
 
     return {
         "required_node_properties": required_node_properties,
@@ -314,8 +409,18 @@ def _validate_graph_schema(ontology: dict, nodes: list[dict], edges: list[dict])
         "nodes_missing_required_properties": missing_node_properties[:100],
         "edges_missing_required_properties": missing_edge_properties[:100],
         "evidence_relation_missing_required_properties": missing_evidence_properties,
+        "duplicate_node_ids": duplicate_node_ids,
+        "duplicate_edge_ids": duplicate_edge_ids,
+        "missing_endpoint_edges": missing_endpoint_edges[:100],
+        "self_loops": self_loops[:100],
+        "image_path_violations": image_path_violations[:100],
+        "unknown_relation_counts": unknown_relation_counts,
         "relation_violations": relation_violations[:100],
         "relation_domain_range_violations": relation_violations[:100],
+        "domain_range_violation_count": len(relation_violations),
+        "self_loop_count": len(self_loops),
+        "missing_endpoint_count": len(missing_endpoint_edges),
+        "image_path_violation_count": len(image_path_violations),
         "counts": {
             "nodes_by_type": {k: len([n for n in nodes if n.get("node_type") == k]) for k in sorted({n.get("node_type", "") for n in nodes})},
             "relations": _relation_counts(edges),
@@ -331,7 +436,16 @@ def _validate_graph_schema(ontology: dict, nodes: list[dict], edges: list[dict])
     }
 
 
-def _build_stats(nodes: list[dict], edges: list[dict], documents: list[dict], evidence: list[dict], images: list[dict], ontology: dict, warnings: list[str]) -> dict:
+def _build_stats(
+    nodes: list[dict],
+    edges: list[dict],
+    documents: list[dict],
+    evidence: list[dict],
+    images: list[dict],
+    ontology: dict,
+    warnings: list[str],
+    repo_root: Path,
+) -> dict:
     unique_entities = {(row.get("node_type"), row.get("canonical_name")) for row in nodes}
     unique_triples = {(row.get("head_id"), row.get("relation"), row.get("tail_id")) for row in edges}
     provenance_relations = {"MENTIONED_IN", "PART_OF_DOCUMENT"}
@@ -343,7 +457,7 @@ def _build_stats(nodes: list[dict], edges: list[dict], documents: list[dict], ev
         "C": len([edge for edge in edges if edge.get("knowledge_layer") == "C"]),
     }
 
-    schema_issues = _validate_graph_schema(ontology, nodes, edges)
+    schema_issues = _validate_graph_schema(ontology, nodes, edges, images, repo_root)
     return {
         "kg_version": KG_VERSION,
         "node_count": len(nodes),
@@ -361,6 +475,23 @@ def _build_stats(nodes: list[dict], edges: list[dict], documents: list[dict], ev
         "triple_layer_counts": triple_layers,
         "warnings": warnings,
         "schema_validation": schema_issues,
+        "quality_gate": {
+            "duplicate_node_ids": schema_issues.get("duplicate_node_ids", []),
+            "duplicate_edge_ids": schema_issues.get("duplicate_edge_ids", []),
+            "self_loops": schema_issues.get("self_loops", []),
+            "missing_endpoints": schema_issues.get("missing_endpoint_edges", []),
+            "domain_range_violations": schema_issues.get("relation_violations", []),
+            "image_path_violations": schema_issues.get("image_path_violations", []),
+            "passed": all(
+                [
+                    not schema_issues.get("duplicate_node_ids"),
+                    not schema_issues.get("duplicate_edge_ids"),
+                    schema_issues.get("self_loop_count", 0) == 0,
+                    schema_issues.get("missing_endpoint_count", 0) == 0,
+                    schema_issues.get("image_path_violation_count", 0) == 0,
+                ]
+            ),
+        },
     }
 
 
@@ -450,7 +581,16 @@ def _build_graph_records(
     merged_evidence = _stable_merge_row_lists(all_evidence, key="evidence_id")
     merged_images = _stable_merge_row_lists(all_images, key="image_id")
 
-    stats = _build_stats(merged_nodes, merged_edges, merged_documents, merged_evidence, merged_images, ontology, warnings)
+    stats = _build_stats(
+        merged_nodes,
+        merged_edges,
+        merged_documents,
+        merged_evidence,
+        merged_images,
+        ontology,
+        warnings,
+        repo_root,
+    )
     return merged_nodes, merged_edges, merged_documents, merged_evidence, merged_images, warnings, ontology
 
 
@@ -497,8 +637,8 @@ def build_graph_outputs(
     )
 
     triples = _triples_rows(edges)
-    schema = _validate_graph_schema(ontology, nodes, edges)
-    stats = _build_stats(nodes, edges, documents, evidence, images, ontology, warnings)
+    schema = _validate_graph_schema(ontology, nodes, edges, images, repo_root)
+    stats = _build_stats(nodes, edges, documents, evidence, images, ontology, warnings, repo_root)
 
     output_files: dict[str, Path] = {}
     output_files["nodes_csv"] = output_dir / "nodes.csv"
@@ -542,6 +682,20 @@ def build_graph_outputs(
         "relation_violations": schema.get("relation_domain_range_violations", []),
         "missing_node_property_records": schema.get("nodes_missing_required_properties", []),
         "missing_edge_property_records": schema.get("edges_missing_required_properties", []),
+        "quality_gate": {
+            "passed": not schema.get("duplicate_node_ids")
+            and not schema.get("duplicate_edge_ids")
+            and schema.get("self_loop_count", 0) == 0
+            and schema.get("missing_endpoint_count", 0) == 0
+            and schema.get("image_path_violation_count", 0) == 0,
+            "duplicate_node_ids": schema.get("duplicate_node_ids", []),
+            "duplicate_edge_ids": schema.get("duplicate_edge_ids", []),
+            "self_loops": schema.get("self_loops", []),
+            "missing_endpoints": schema.get("missing_endpoint_edges", []),
+            "relation_violations": schema.get("relation_violations", []),
+            "image_path_violations": schema.get("image_path_violations", []),
+            "unknown_relation_counts": schema.get("unknown_relation_counts", []),
+        },
     }
     _write_json(output_files["schema_json"], schema_payload)
     _write_json(output_files["stats_json"], stats)

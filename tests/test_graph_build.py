@@ -79,3 +79,39 @@ def test_graph_stats_include_layer_counts_and_provenance(tmp_path: Path):
     assert "provenance_edge_count" in stats
     assert stats["provenance_edge_count"] >= 0
     assert stats["schema_validation"]["relation_violations"] is not None
+
+
+def test_graph_quality_gate_has_expected_fields(tmp_path: Path):
+    repo_root = Path(__file__).resolve().parents[1]
+
+    result = graph_builder.build_graph_outputs(
+        repo_root=repo_root,
+        output_dir=tmp_path / "run",
+        include_retina=False,
+        include_pneumonia=False,
+    )
+
+    schema = result.schema
+    stats = result.stats
+
+    assert "quality_gate" in schema
+    assert "quality_gate" in stats
+    assert "duplicate_node_ids" in schema["quality_gate"]
+    assert "duplicate_edge_ids" in schema["quality_gate"]
+    assert "self_loops" in schema["quality_gate"]
+    assert "missing_endpoints" in schema["quality_gate"]
+    assert "relation_violations" in schema["quality_gate"]
+    assert "image_path_violations" in schema["quality_gate"]
+    assert isinstance(schema["quality_gate"]["duplicate_node_ids"], list)
+    assert isinstance(schema["quality_gate"]["duplicate_edge_ids"], list)
+    assert isinstance(schema["quality_gate"]["self_loops"], list)
+    assert isinstance(schema["quality_gate"]["missing_endpoints"], list)
+    assert isinstance(schema["quality_gate"]["relation_violations"], list)
+    assert isinstance(schema["quality_gate"]["image_path_violations"], list)
+
+    # deterministic quality checks for current built graph
+    assert stats["quality_gate"]["missing_endpoints"] == []
+    assert stats["quality_gate"]["self_loops"] == []
+    assert stats["quality_gate"]["image_path_violations"] == []
+    assert len(stats["quality_gate"]["duplicate_node_ids"]) == 0
+    assert len(stats["quality_gate"]["duplicate_edge_ids"]) == 0

@@ -756,3 +756,29 @@ Blockers:
 Next:
 
 - 继续推进 `GRAPH-002` 的质量校验清单与验证测试。
+
+## 2026-06-25 - Phase 4 Graph Build Gate (GRAPH-002)
+
+Task:
+- 继续完成 `GRAPH-002` 的质量校验实现，补齐质量门输出一致性并回归验证测试。
+
+Commands run:
+- `python -m pytest tests/test_graph_build.py -q`
+- `python -m pytest`
+- `./scripts/run.ps1 test`
+
+Result:
+- 修复 `src/diabetes_mmkgqa_starter/graph_builder.py` 中 `_build_graph_records` 对 `_build_stats` 的 `repo_root` 参数缺失问题，恢复图谱构建调用链。
+- 调整 `tests/test_graph_build.py` 质量门断言为 `schema["quality_gate"]` 与 `stats["quality_gate"]`，并约束关键字段类型与空值预期。
+- 更新 `TASKS.md`：`GRAPH-002` 标记为 `DONE`。
+- `GRAPH-002` 回归结果：
+  - `tests/test_graph_build.py`: 3 passed
+  - 全量测试: 22 passed
+  - `./scripts/run.ps1 test`: 22 passed（回退到 pytest，`make` 不可用已留存）
+
+Blockers:
+- 无新增阻塞。
+
+Next:
+- `GRAPH-003`（分层统计产出对齐）。
+- `DB-001`（Neo4j 幂等导入）准备就绪后继续。
