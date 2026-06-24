@@ -252,3 +252,46 @@ Next:
 
 - `BOOT-002`（Python 项目元数据与依赖锁定）。
 
+## 2026-06-24 - Phase 1 Bootstrap Gate (BOOT-002)
+
+Task:
+
+- Add Python project metadata and pinned dependency lock for reproducible bootstrap.
+
+Commands run:
+
+- `Test-Path pyproject.toml; Test-Path requirements-lock.txt; ...` (directory and file presence checks)
+- `Get-Date -Format "yyyy-MM-dd HH:mm:ss"` (task timestamp)
+- `python --version` (runtime check)
+- `New-Item -ItemType Directory -Path scripts` (directory contract prep for next bootstrap tasks)
+- `New-Item -ItemType Directory -Path src\\diabetes_mmkgqa_starter` (package layout directory for next bootstrap tasks)
+- `Set-Content/WriteAllText` to create `pyproject.toml` and `requirements-lock.txt` with pinned versions
+- `python -c ...` parse validation for `pyproject.toml` and lock consistency checks
+- BOM checks for generated files.
+
+Result:
+
+- Added `pyproject.toml` with:
+  - `build-system` config (`setuptools` + `wheel`)
+  - project metadata (`name`, `version`, `requires-python`, description)
+  - pinned runtime dependencies (8 entries)
+  - pinned `dev` extras
+  - `diabetes-mmkgqa` entrypoint target.
+- Added `requirements-lock.txt` with 10 pinned install lines (runtime + quality/dev tools).
+- Verified:
+  - `pyproject.toml` parses as valid TOML.
+  - project scripts include `diabetes-mmkgqa`.
+- New dependency files are UTF-8 without BOM and are ready for reproducible bootstrap installs.
+
+Task status change:
+
+- `BOOT-002` marked `DONE`.
+
+Blockers:
+
+- None for this bootstrap gate.
+
+Next:
+
+- `BOOT-003` (add `scripts/run.ps1` bootstrap/data/kg/test/verify/demo/report/package equivalents).
+

@@ -22,7 +22,7 @@ This ledger is the current TODO source. The long-form roadmap is
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
 | BOOT-001 | DONE | Initialize or verify Git repository | `.git` exists, starter baseline is committed, and ignored files are documented |
-| BOOT-002 | TODO | Add Python project metadata | `pyproject.toml` and pinned dependencies exist |
+| BOOT-002 | DONE | Add Python project metadata | `pyproject.toml` and pinned dependencies exist |
 | BOOT-003 | TODO | Add Windows runner | `scripts/run.ps1` exposes bootstrap/data/kg/test/verify/demo/report/package equivalents |
 | BOOT-004 | TODO | Add package skeleton and smoke tests | CLI help and minimal pytest pass with supported Python |
 

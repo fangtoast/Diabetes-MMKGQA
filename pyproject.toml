@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "diabetes-mmkgqa-starter"
+version = "0.1.0"
+description = "Educational multimodal medical KGQA starter for diabetes, pneumonia, and hypertension"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+authors = [
+  {name = "Project Team"}
+]
+license = {text = "MIT"}
+dependencies = [
+  "fastapi==0.115.5",
+  "uvicorn[standard]==0.30.6",
+  "pydantic==2.8.2",
+  "pandas==2.2.2",
+  "pyyaml==6.0.2",
+  "click==8.1.7",
+  "typer==0.12.3",
+  "pytest==8.3.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "black==24.8.0",
+  "ruff==0.6.9",
+]
+
+[project.scripts]
+diabetes-mmkgqa = "diabetes_mmkgqa_starter.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
