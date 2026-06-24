@@ -92,7 +92,32 @@ function Ensure-Dir {
 
 function Invoke-Demo {
     Write-Host '=== demo ==='
-    Write-Placeholder 'Demo command is scaffolded. Implementation will run fixed demo cases once QA/data pipeline is ready.'
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        Write-Error 'Python is required to run demo cases.'
+        exit 1
+    }
+
+    $args = @(
+        '--processed-dir', 'data/processed',
+        '--demo-output-dir', 'docs/cases',
+        '--demo-output-json', 'demo_cases.json'
+    )
+    if ($Rest -and $Rest.Count -gt 0) {
+        $args = $Rest
+    }
+
+    $prevPythonPath = $env:PYTHONPATH
+    try {
+        $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+        & python -m diabetes_mmkgqa_starter.cli @args demo
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "demo command failed with code $LASTEXITCODE"
+            exit $LASTEXITCODE
+        }
+    }
+    finally {
+        $env:PYTHONPATH = $prevPythonPath
+    }
 }
 
 function Invoke-Report {

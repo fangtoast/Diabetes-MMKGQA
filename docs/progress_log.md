@@ -1148,3 +1148,35 @@ Decision:
 Next:
 
 - Continue `DEMO-001` planning and/or generate required `data/processed` artifacts before re-running end-to-end runtime interaction screenshots.
+
+## 2026-06-25 - Phase 8 Demo Gate (DEMO-001)
+
+Task:
+
+- 完成固定复现演示案例任务 `DEMO-001`，并修复 `tests/test_demo.py` 中 CLI 子进程定位与参数引用问题。
+
+Commands run:
+
+- `python -m pytest tests/test_demo.py -q`
+- `$env:PYTHONPATH='D:/project/diabetes_mmkgqa_starter/src'; python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir artifacts/demo_test --demo-output-json round3_demo.json --demo-screenshot-dir artifacts/demo_screens --no-demo-screenshots`
+
+Result:
+
+- `tests/test_demo.py` 通过：`2 passed`
+- `cli demo` 成功执行并生成固定用例：`[cli] Generated 5 demo cases -> artifacts\demo_test\round3_demo.json`
+- 结果文件包含 `case_count=5`
+- 截图关闭（`--no-demo-screenshots`）时 `Demo screenshots: 0`
+
+Task status change:
+
+- `DEMO-001` 标记为 `DONE`。
+
+Blockers:
+
+- 当前环境 CLI 演示命令要求显式设置 `PYTHONPATH=src`；若从新环境执行未设置，需要通过 `scripts/run.ps1 demo` 进行包装。
+- 截图能力默认依赖浏览器可执行文件可用性；当前快检以截图关闭模式通过。
+
+Next:
+
+- 进入 `DOC-001`：补充 `README` 与报告输入材料。
+- 后续 `PKG-001` 完成最终打包说明与交付说明。

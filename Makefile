@@ -35,7 +35,7 @@ verify:
 	@echo "TODO: lint + tests + data quality + smoke test"
 
 demo:
-	@echo "TODO: run fixed cases and write JSON/screenshots"
+	@PYTHONPATH=src python -m diabetes_mmkgqa_starter.cli demo
 
 report:
 	@echo "TODO: assemble report inputs or generate docx"

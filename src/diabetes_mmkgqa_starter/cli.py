@@ -9,6 +9,7 @@ from typing import Sequence
 
 from . import __version__
 from . import graph_builder
+from . import demo
 
 
 AVAILABLE_COMMANDS = (
@@ -71,6 +72,32 @@ def build_parser() -> ArgumentParser:
         default=str(Path("configs") / "ontology.yaml"),
         help="Ontology path for load relation validation.",
     )
+    parser.add_argument(
+        "--intent-path",
+        default=str(Path("configs") / "intents.yaml"),
+        help="Intent contract path for QA and demo case execution.",
+    )
+    parser.add_argument(
+        "--processed-dir",
+        default=str(Path("data") / "processed"),
+        help="Directory that stores portable KG exports for demo execution.",
+    )
+    parser.add_argument(
+        "--demo-output-dir",
+        default=str(Path("docs") / "cases"),
+        help="Directory for generated demo case JSON.",
+    )
+    parser.add_argument(
+        "--demo-output-json",
+        default="demo_cases.json",
+        help="Filename for generated demo results JSON.",
+    )
+    parser.add_argument(
+        "--demo-screenshot-dir",
+        default=str(Path("docs") / "screenshots"),
+        help="Directory for demo case screenshots.",
+    )
+    parser.add_argument("--no-demo-screenshots", action="store_true", help="Skip screenshot generation for demo cases.")
     return parser
 
 
@@ -128,6 +155,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "[cli] Neo4j import plan prepared/executed: "
                 f"nodes={summary.node_count}, edges={summary.edge_count}, statements={summary.statement_count}, dry_run={args.load_dry_run}"
             )
+            return 0
+        if command == "demo":
+            result = demo.run_demo_cases(
+                repo_root=Path(args.repo_root),
+                output_dir=Path(args.demo_output_dir),
+                processed_dir=Path(args.processed_dir),
+                intents_path=Path(args.intent_path),
+                screenshot_dir=Path(args.demo_screenshot_dir),
+                output_json=args.demo_output_json,
+                capture_screenshots=not args.no_demo_screenshots,
+            )
+            print(f"[cli] Generated {result['case_count']} demo cases -> {result['output_path']}")
+            print(f"[cli] Demo screenshots: {result['screenshot_count']}")
             return 0
         print(f"[cli] {command} scaffold ready.")
         return 0
