@@ -1388,3 +1388,26 @@ Blockers:
 Next:
 
 - 如果需要最终交付归档前最后一次快照一致性核对，可执行 `./scripts/run.ps1 package` 与 `deliverables/package-manifest.json` 校验。
+## 2026-06-25 - Screenshot artifact verification (DEMO artifact check)
+
+Task:
+
+- 复核 `DEMO-001`~`DEMO-005` 报告记录中的截图路径是否真实生成。
+
+Commands run:
+
+- `python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json --demo-screenshot-dir docs/screenshots`
+- `foreach($i in 1..5){ $p="docs\\screenshots\\demo_{0:d3}.png" -f $i; Write-Output "$p $(Test-Path $p)" }`
+
+Result:
+
+- CLI 返回 `Demo screenshots: 5`，但实际文件系统不存在上述 `docs\screenshots\demo_*.png`（均为 `False`）。
+- 已确认 `docs/cases/demo_cases.json` 记录了截图路径与状态，但截图实体仍为缺失。
+
+Blockers:
+
+- 截图渲染/落盘链路在当前环境不完整：可能是 `unicode` 子进程输出解码问题与前端渲染头程兼容导致的副作用，属于可交付资料准备缺口（非功能阻塞）。
+
+Next:
+
+- `BLOCKED` 标记截图工件：若需最终交付展示，请切换到支持中文控制台编码的环境，重新运行 demo 截图链路并回填实际图片文件。
