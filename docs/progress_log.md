@@ -178,3 +178,45 @@ Next:
 
 - Next task: `DOC-BOOT-001` (README/root document pointers).
 
+## 2026-06-24 - Phase 0 Contract Upgrade (DOC-BOOT-001)
+
+Task:
+
+- Add root README entry points for major project documents and execution baseline.
+
+Commands run:
+
+- Read source-of-truth files:
+  `AGENTS.md`, `docs/project_plan.md`, `TASKS.md`, `docs/progress_log.md`,
+  `docs/architecture.md`, `configs/ontology.yaml`, `configs/intents.yaml`,
+  `data/source_manifest.yaml`.
+- Created/updated `README.md` with links to:
+  - `docs/project_plan.md`
+  - `docs/codex_target_prompt.md`
+  - `TASKS.md`
+  - `docs/progress_log.md`
+  - `docs/architecture.md`
+  - `data/source_manifest.yaml`
+  - `configs/ontology.yaml`
+  - `configs/intents.yaml`
+
+Result:
+
+- `DOC-BOOT-001` set to DONE.
+- README now provides command index and non-clinical safety boundary for this phase.
+- Verified with simple path/keyword checks:
+  - `docs/project_plan.md`
+  - `docs/codex_target_prompt.md`
+  - `TASKS.md`
+  - `docs/progress_log.md`
+  - `课程演示、非临床诊断`
+  - `make bootstrap`
+
+Blockers:
+
+- No blockers.
+
+Next:
+
+- Next task: `BOOT-001`（初始化 Git）或 `BOOT-002`（运行时脚手架），按实际确认顺序推进。（当前环境已具备 Git；以 `BOOT-001`/`BOOT-002` 实际任务顺序为准）
+
