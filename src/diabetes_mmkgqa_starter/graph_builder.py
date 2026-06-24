@@ -518,6 +518,7 @@ def _build_stats(
             "self_loops": schema_issues.get("self_loops", []),
             "missing_endpoints": schema_issues.get("missing_endpoint_edges", []),
             "domain_range_violations": schema_issues.get("relation_violations", []),
+            "relation_violations": schema_issues.get("relation_violations", []),
             "image_path_violations": schema_issues.get("image_path_violations", []),
             "passed": all(
                 [
@@ -526,6 +527,7 @@ def _build_stats(
                     schema_issues.get("self_loop_count", 0) == 0,
                     schema_issues.get("missing_endpoint_count", 0) == 0,
                     schema_issues.get("image_path_violation_count", 0) == 0,
+                    schema_issues.get("domain_range_violation_count", 0) == 0,
                 ]
             ),
         },
@@ -724,7 +726,9 @@ def build_graph_outputs(
             and not schema.get("duplicate_edge_ids")
             and schema.get("self_loop_count", 0) == 0
             and schema.get("missing_endpoint_count", 0) == 0
-            and schema.get("image_path_violation_count", 0) == 0,
+            and schema.get("image_path_violation_count", 0) == 0
+            and schema.get("domain_range_violation_count", 0) == 0
+            and not schema.get("relation_violations"),
             "duplicate_node_ids": schema.get("duplicate_node_ids", []),
             "duplicate_edge_ids": schema.get("duplicate_edge_ids", []),
             "self_loops": schema.get("self_loops", []),

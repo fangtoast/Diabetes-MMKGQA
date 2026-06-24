@@ -249,6 +249,29 @@ def parse_manual_b_rules(rows: list[dict], source_id: str) -> tuple[list[dict], 
             knowledge_layer="C",
             extras={"description": row.get("comments", "")},
         )
+        test_item_id = None
+        if row.get("rule_type"):
+            test_item_id = _add_node(
+                nodes_by_id,
+                source_id=source_id,
+                node_type="TestItem",
+                canonical_name=row["rule_type"],
+                knowledge_layer="A",
+                extras={
+                    "unit": row.get("unit", ""),
+                    "description": row.get("comments", ""),
+                },
+            )
+            _add_edge(
+                edges_by_id,
+                head_id=disease_id,
+                relation="HAS_TEST_ITEM",
+                tail_id=test_item_id,
+                source_id=source_id,
+                knowledge_layer="A",
+                raw_relation="TestItem_Disease",
+                normalized_relation="HAS_TEST_ITEM",
+            )
         _add_edge(
             edges_by_id,
             head_id=rule_id,
@@ -271,7 +294,7 @@ def parse_manual_b_rules(rows: list[dict], source_id: str) -> tuple[list[dict], 
             )
             _add_edge(
                 edges_by_id,
-                head_id=rule_id,
+                head_id=test_item_id or rule_id,
                 relation="HAS_DIAGNOSTIC_THRESHOLD",
                 tail_id=threshold_id,
                 source_id=source_id,

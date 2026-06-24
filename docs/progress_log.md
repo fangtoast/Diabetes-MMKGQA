@@ -1335,3 +1335,27 @@ Blockers:
 Next:
 
 - 保持 `VERIFY-001` 记录状态为 DONE，后续新增环境中复测 `make` 与 `make verify`。
+## 2026-06-26 - Verification hardening (VERIFY-002)
+
+Task:
+
+- Resolve remaining schema/domain-range violations in graph build gates and align parser outputs with ontology domains/ranges.
+
+Commands run:
+
+- `python -m pytest tests/test_graph_build.py tests/test_ingest_manual.py::test_ingest_manual_parsing_is_deterministic tests/test_ingest_diakg.py::test_parse_diakg_deterministic_and_relations -q`
+
+Result:
+
+- 图构建质量门控通过：`stats["quality_gate"]["passed"]` 与 `schema["quality_gate"]["passed"]` 均为 `True`。
+- 领域/范围冲突修复：`HAS_DIAGNOSTIC_THRESHOLD` 已从 `StandardRule` 指向 `TestItem`。
+- DiaKG `HAS_CAUSE` 关系中由 `Disease -> Disease` 引发的 `tail_type_mismatch` 被改为 `Disease -> Etiology`。
+- `test_ingest_manual` 与 `test_ingest_diakg` 关键稳定性/可复现性断言通过。
+
+Blockers:
+
+- 无新增阻塞。
+
+Next:
+
+- 如需进一步收官，可复核 `docs/architecture.md` 与 `configs/ontology.yaml` 的规则注释是否与该修复保持一致。

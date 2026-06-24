@@ -137,3 +137,5 @@ def test_graph_quality_gate_has_expected_fields(tmp_path: Path):
     assert stats["quality_gate"]["image_path_violations"] == []
     assert len(stats["quality_gate"]["duplicate_node_ids"]) == 0
     assert len(stats["quality_gate"]["duplicate_edge_ids"]) == 0
+    assert stats["quality_gate"]["passed"] is True
+    assert len(stats["quality_gate"]["relation_violations"]) == 0

@@ -351,6 +351,19 @@ def parse_diakg_records(
                     if reverse:
                         head_id, tail_id = tail_id, head_id
 
+                    if normalized_relation == "HAS_CAUSE":
+                        head_node = nodes.get(head_id, {})
+                        tail_node = nodes.get(tail_id, {})
+                        if head_node.get("node_type") == "Disease" and tail_node.get("node_type") == "Disease":
+                            tail_id = _add_node(
+                                nodes,
+                                source_id=source_id,
+                                node_type="Etiology",
+                                canonical_name=tail_node.get("canonical_name", tail_text),
+                                knowledge_layer="C",
+                                extras={"source_sentence_id": sentence_id, "document_id": document_id},
+                            )
+
                     _add_edge(
                         edges,
                         head_id=head_id,
