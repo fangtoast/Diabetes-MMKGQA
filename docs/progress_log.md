@@ -295,3 +295,46 @@ Next:
 
 - `BOOT-003` (add `scripts/run.ps1` bootstrap/data/kg/test/verify/demo/report/package equivalents).
 
+## 2026-06-24 - Phase 1 Bootstrap Gate (BOOT-003)
+
+Task:
+
+- Add a Windows runner script with fallback behavior for missing make.
+
+Commands run:
+
+- `Test-Path Makefile`
+- `make_exists` probe
+- `Get-Content scripts/run.ps1`
+- `./scripts/run.ps1 help`
+- `./scripts/run.ps1 data`
+- `./scripts/run.ps1 kg`
+- `./scripts/run.ps1 up`
+- `./scripts/run.ps1 load`
+- `./scripts/run.ps1 test`
+- `./scripts/run.ps1 verify`
+- `./scripts/run.ps1 demo`
+- `./scripts/run.ps1 report`
+- `./scripts/run.ps1 package`
+
+Result:
+
+- Added `scripts/run.ps1` with task dispatch for `help/bootstrap/data/kg/up/load/test/verify/demo/report/package`.
+- Confirmed `make` is unavailable in this environment, so all non-bootstrap paths used safe PowerShell fallback logic.
+- Verified each command returns expected fallback/stub behavior and exits successfully:
+  - `help` prints usage text
+  - `data` / `kg` / `up` / `load` / `verify` / `test` / `demo` / `report` / `package` provide command-ready messages.
+- `test` fallback found pytest and executed a smoke run (0 tests collected, no failures).
+
+Task status change:
+
+- `BOOT-003` marked `DONE`.
+
+Blockers:
+
+- No blocker for this gate.
+
+Next:
+
+- `BOOT-004` (package skeleton and smoke tests).
+
