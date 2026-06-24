@@ -559,3 +559,31 @@ Blockers:
 
 Next:
 - `INGEST-002`（实现 DiaKG parser）。
+## 2026-06-25 - Phase 3 Parser Gate (INGEST-002)
+
+Task:
+- Implement DiaKG parser with deterministic IDs, evidence-aware edges, and raw/normalized relation preservation.
+
+Commands run:
+- `python -m pytest tests/test_ingest_diakg.py`
+- `python -m pytest`
+
+Result:
+- Added `src/diabetes_mmkgqa_starter/ingestion/diakg_parser.py` with:
+  - DiKG source selection using `data/source_manifest.yaml` (`diakg` -> `manual_diakg_fallback`).
+  - Deterministic node/edge ID generation via shared sha1 helper.
+  - Parsing of documents -> paragraphs -> sentences -> entities + sentence-level evidence.
+  - Evidence node + document provenance (`PART_OF_DOCUMENT`, `MENTIONED_IN`-style links) and raw/normalized relation handling.
+  - Relation reverse support from ontology `raw_relation_mapping`.
+  - Export helper for interim `diakg_nodes.csv`, `diakg_edges.csv`, `diakg_documents.csv`, `diakg_evidence.csv`.
+- Added `tests/test_ingest_diakg.py` with:
+  - Determinism checks (double parse).
+  - Required semantic relation/evidence assertions.
+  - Repeatable export checks for all interim outputs.
+- `TASKS.md` updated: `INGEST-002` set to DONE.
+
+Blockers:
+- No new functional blockers for fixture-based parsing.
+
+Next:
+- `INGEST-003`（实现 RetinaMNIST parser）。
