@@ -301,3 +301,25 @@ def test_api_images_search_and_stats_require_backend(tmp_path: Path):
     missing_body = missing.json()
     assert "not found" in missing_body["detail"]
     assert "课程演示、非临床诊断" in missing_body["safety_notice"]
+
+
+def test_api_frontend_routes_when_frontend_exists(tmp_path: Path):
+    processed, intents_path = _build_api_fixture(tmp_path)
+    frontend = tmp_path / "frontend"
+    frontend.mkdir()
+    (frontend / "index.html").write_text("<!doctype html><html><body>kgqa ui</body></html>", encoding="utf-8")
+    (frontend / "styles.css").write_text("body { }", encoding="utf-8")
+    (frontend / "app.js").write_text("console.log('ui boot');", encoding="utf-8")
+
+    app = create_app(repo_root=tmp_path, processed_dir=processed, intents_path=intents_path)
+    client = TestClient(app)
+
+    root = client.get("/", allow_redirects=False)
+    ui = client.get("/ui")
+    static = client.get("/static/app.js")
+
+    assert root.status_code == 307
+    assert root.headers["location"] == "/ui"
+    assert ui.status_code == 200
+    assert "kgqa ui" in ui.text
+    assert static.status_code == 200

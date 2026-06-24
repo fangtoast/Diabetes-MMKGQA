@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from diabetes_mmkgqa_starter.db import PortableGraphBackend
@@ -18,6 +20,7 @@ from diabetes_mmkgqa_starter.qa.service import SAFETY_NOTICE
 
 DEFAULT_BACKEND_DIR = Path("data") / "processed"
 DEFAULT_INTENT_PATH = Path("configs") / "intents.yaml"
+DEFAULT_FRONTEND_DIR = Path("frontend")
 
 
 @dataclass
@@ -143,6 +146,25 @@ def create_app(
             "Course demo API for multimodal medical KGQA. "
             "This is educational only and not a clinical diagnostic tool."
         ),
+    )
+    frontend_dir = root / DEFAULT_FRONTEND_DIR
+    if frontend_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="frontend")
+
+        @app.get("/", include_in_schema=False)
+        def root_redirect() -> RedirectResponse:
+            return RedirectResponse(url="/ui")
+
+        @app.get("/ui", include_in_schema=False)
+        def ui_entrypoint() -> FileResponse:
+            return FileResponse(frontend_dir / "index.html")
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     app.state.runtime = state
 

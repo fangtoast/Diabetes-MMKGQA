@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>多病种多模态医学 KGQA 平台</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <h1>多病种多模态医学 KGQA 平台</h1>
+        <p>课程演示课程工作台（非临床诊断）</p>
+      </div>
+      <div id="safetyNotice" class="notice-card" role="status" aria-live="polite"></div>
+    </header>
+
+    <main class="layout">
+      <nav class="panel" aria-label="主菜单">
+        <button class="tab is-active" data-section="qa" type="button">QA Workspace</button>
+        <button class="tab" data-section="graph" type="button">Graph Explorer</button>
+        <button class="tab" data-section="images" type="button">Image Retrieval</button>
+        <button class="tab" data-section="stats" type="button">Layered Statistics</button>
+        <button class="tab" data-section="demo" type="button">Demo Cases</button>
+      </nav>
+
+      <section class="panel section section-active" id="qa" data-panel="qa">
+        <h2>QA Workspace</h2>
+        <p class="tip">课程演示、非临床诊断。回答返回证据与版本信息。</p>
+        <form id="qaForm">
+          <label for="qaQuestion">请输入问题：</label>
+          <textarea id="qaQuestion" rows="3" required placeholder="如：糖尿病有哪些症状？"></textarea>
+          <button type="submit">提交问题</button>
+        </form>
+        <div id="qaStatus" class="status"></div>
+        <div id="qaOutput" class="result"></div>
+      </section>
+
+      <section class="panel section" id="graph" data-panel="graph">
+        <h2>Graph Explorer</h2>
+        <form id="graphForm">
+          <label for="centerNode">中心实体 ID：</label>
+          <input id="centerNode" placeholder="例如：d1" />
+          <label for="maxHops">跳数：</label>
+          <input id="maxHops" type="number" min="1" max="5" value="2" />
+          <button type="submit">拉取子图</button>
+        </form>
+        <div id="graphStatus" class="status"></div>
+        <div class="two-col">
+          <div>
+            <h3>节点</h3>
+            <pre id="graphNodes" class="result"></pre>
+          </div>
+          <div>
+            <h3>边</h3>
+            <pre id="graphEdges" class="result"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel section" id="images" data-panel="images">
+        <h2>Image Retrieval</h2>
+        <form id="imageForm">
+          <label for="diseaseId">Disease ID:</label>
+          <input id="diseaseId" />
+          <label for="gradeId">ImageGrade ID:</label>
+          <input id="gradeId" />
+          <label for="datasetId">Dataset ID:</label>
+          <input id="datasetId" />
+          <label for="splitId">DataSplit ID:</label>
+          <input id="splitId" />
+          <label for="imageLimit">Limit:</label>
+          <input id="imageLimit" type="number" min="1" max="100" value="20" />
+          <button type="submit">查询影像</button>
+        </form>
+        <div id="imageStatus" class="status"></div>
+        <div id="imageOutput" class="result"></div>
+      </section>
+
+      <section class="panel section" id="stats" data-panel="stats">
+        <h2>Layered Statistics</h2>
+        <p class="tip">从本地 KG 后端实时读取图谱统计。</p>
+        <button id="refreshStats" type="button">刷新统计</button>
+        <div id="statsOutput" class="result"></div>
+      </section>
+
+      <section class="panel section" id="demo" data-panel="demo">
+        <h2>Demo Cases</h2>
+        <p class="tip">固定演示问题（课程演示用途）：</p>
+        <div class="demo-grid" id="demoCases"></div>
+        <div id="demoOutput" class="result"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>API 健康：<span id="healthSummary">检测中...</span></p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

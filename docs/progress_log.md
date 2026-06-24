@@ -1077,3 +1077,39 @@ Blockers:
 Next:
 
 - 开始 `UI-002`：使用 Build Web Apps 工作流实现前端骨架，使用 API 连接 QA、图谱、图像、统计和健康状态。
+
+## 2026-06-26 - Phase 7 UI Gate (UI-002)
+
+Task:
+
+- 实现前端交付页并对齐 API 工作台需求（Build Web Apps 产物落盘）：
+  - QA Workspace
+  - Graph Explorer
+  - Image Retrieval
+  - Layered Statistics
+  - Demo Cases
+- 为 FastAPI 增加前端入口与静态资源挂载。
+
+Commands run:
+
+- `python -m py_compile src/diabetes_mmkgqa_starter/api/app.py`
+- `python -m pytest tests/test_api_endpoints.py -q`
+
+Result:
+
+- 新增前端文件：
+  - `frontend/index.html`
+  - `frontend/styles.css`
+  - `frontend/app.js`
+- 更新 `src/diabetes_mmkgqa_starter/api/app.py`：
+  - 挂载 `/static` 静态目录
+  - 新增 `GET /` 重定向到 `/ui`
+  - 新增 `GET /ui` 返回工作台 HTML
+- 验证点：
+  - API 端点用例通过（本地端点可按既有 fixture 读写 JSON）。
+- `app.py` 可被编译通过。
+- `tests/test_api_endpoints.py` 新增 `test_api_frontend_routes_when_frontend_exists`，并在本轮验证中通过（5 passed）。
+
+Current status:
+
+- `UI-002` 标记为 DONE，等待 `UI-003` 进行截图与响应式可视化验证。
