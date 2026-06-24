@@ -51,6 +51,20 @@ def build_parser() -> ArgumentParser:
     parser.add_argument("--skip-diakg", action="store_true", help="Skip DiaKG parser in kg command.")
     parser.add_argument("--skip-retina", action="store_true", help="Skip RetinaMNIST parser in kg command.")
     parser.add_argument("--skip-pneumonia", action="store_true", help="Skip PneumoniaMNIST parser in kg command.")
+    parser.add_argument("--neo4j-uri", default=None, help="Neo4j Bolt URI for load command.")
+    parser.add_argument("--neo4j-user", default="neo4j", help="Neo4j username for load command.")
+    parser.add_argument(
+        "--neo4j-password",
+        default=None,
+        help="Neo4j password for load command. If omitted, load will require this argument.",
+    )
+    parser.add_argument("--neo4j-database", default="neo4j", help="Neo4j database name for load command.")
+    parser.add_argument("--load-dry-run", action="store_true", help="Build and validate Neo4j import plan without execution.")
+    parser.add_argument(
+        "--ontology-path",
+        default=str(Path("configs") / "ontology.yaml"),
+        help="Ontology path for load relation validation.",
+    )
     return parser
 
 
@@ -78,6 +92,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 include_pneumonia=not args.skip_pneumonia,
             )
             print(f"[cli] kg outputs generated in {Path(args.output_dir).resolve()}")
+            return 0
+        if command == "load":
+            from .db import neo4j_loader
+
+            summary = neo4j_loader.execute_load(
+                processed_dir=Path(args.output_dir),
+                uri=args.neo4j_uri,
+                user=args.neo4j_user,
+                password=args.neo4j_password,
+                database=args.neo4j_database,
+                ontology_path=Path(args.ontology_path),
+                dry_run=args.load_dry_run,
+            )
+            print(
+                "[cli] Neo4j import plan prepared/executed: "
+                f"nodes={summary.node_count}, edges={summary.edge_count}, statements={summary.statement_count}, dry_run={args.load_dry_run}"
+            )
             return 0
         print(f"[cli] {command} scaffold ready.")
         return 0

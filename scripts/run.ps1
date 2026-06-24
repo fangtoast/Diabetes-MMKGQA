@@ -200,8 +200,30 @@ switch ($Command) {
     }
 
     'load' {
-        Invoke-MakeOrFallback -Target 'load' -FallbackMessage 'make load unavailable; graph import placeholder.' -Fallback {
-            Write-Placeholder 'Load placeholder: idempotent Neo4j/import pipeline to be implemented in later phase.'
+        Invoke-MakeOrFallback -Target 'load' -FallbackMessage 'make load unavailable; running Neo4j import dry-run helper.' -Fallback {
+            if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+                Write-Error 'python is not available; cannot run Neo4j load fallback.'
+                exit 1
+            }
+            $args = @(
+                '--dry-run'
+                '--repo-root', (Get-Location).Path
+            )
+            if ($Rest -and $Rest.Count -gt 0) {
+                $args = $Rest
+            }
+            $prevPythonPath = $env:PYTHONPATH
+            try {
+                $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+                & python -m diabetes_mmkgqa_starter.db.neo4j_loader @args
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Error "neo4j load failed with code $LASTEXITCODE"
+                    exit $LASTEXITCODE
+                }
+            }
+            finally {
+                $env:PYTHONPATH = $prevPythonPath
+            }
         }
     }
 

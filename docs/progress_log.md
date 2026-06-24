@@ -811,3 +811,43 @@ Blockers:
 
 Next:
 - `DB-001`（幂等 Neo4j 导入）与 `DB-002`（portable backend）开始。
+## 2026-06-25 - Phase 5 Graph Backends Gate (DB-001)
+
+Task:
+
+- Implement idempotent Neo4j import pipeline and connect CLI and runner paths for reproducible load behavior.
+
+Commands run:
+
+- `python -m py_compile src/diabetes_mmkgqa_starter/db/neo4j_loader.py src/diabetes_mmkgqa_starter/cli.py tests/test_neo4j_load.py`
+- `python -m pytest tests/test_neo4j_load.py -q`
+- `python -m pytest tests/test_cli_smoke.py -q`
+- `./scripts/run.ps1 load`
+- `python -m py_compile src/diabetes_mmkgqa_starter/db/neo4j_loader.py`
+
+Results:
+
+- Added `src/diabetes_mmkgqa_starter/db/neo4j_loader.py` import plan + execution helpers.
+- Added `tests/test_neo4j_load.py` to assert MERGE-idempotent semantics and dry-run summaries.
+- Extended CLI `load` command path to call Neo4j loader and pass repo/ontology/password options.
+- Added Neo4j dependency `neo4j==5.28.0` to `requirements-lock.txt`.
+- Implemented real `make load` target with configurable env vars (`NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `NEO4J_DATABASE`).
+- Fixed `scripts/run.ps1 load` package import path and option mapping (`--dry-run` vs loader args).
+- Test result: `tests/test_neo4j_load.py` passed after escaping Cypher property-map braces.
+- Test result: `tests/test_cli_smoke.py` passed.
+- CLI/loader verification via `run.ps1 load` currently fails with `FileNotFoundError` when `data/processed/nodes.csv` and `edges.csv` are absent (expected until data/processed artifacts exist).
+
+Current status:
+
+- `DB-001` marked DONE in `TASKS.md`.
+- `DB-002` remains TODO.
+
+Known blockers:
+
+- `make` is not available in current environment (`scripts/run.ps1` fallback is used).
+- `scripts/run.ps1 load` depends on prior graph artifact existence (`data/processed/nodes.csv`, `data/processed/edges.csv`).
+
+Next:
+
+- Gate DB-001 closeout can move to DONE once local environment has built KG artifacts and `make load` dry-run is shown in normal environment.
+- Continue with DB-002 portable fallback backend implementation and blocked-state handling when Docker/Neo4j unavailable.
