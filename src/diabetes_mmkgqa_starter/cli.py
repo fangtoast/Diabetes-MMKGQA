@@ -59,6 +59,12 @@ def build_parser() -> ArgumentParser:
         help="Neo4j password for load command. If omitted, load will require this argument.",
     )
     parser.add_argument("--neo4j-database", default="neo4j", help="Neo4j database name for load command.")
+    parser.add_argument(
+        "--backend",
+        default="neo4j",
+        choices=["neo4j", "portable"],
+        help="Backend selection for load command.",
+    )
     parser.add_argument("--load-dry-run", action="store_true", help="Build and validate Neo4j import plan without execution.")
     parser.add_argument(
         "--ontology-path",
@@ -94,6 +100,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"[cli] kg outputs generated in {Path(args.output_dir).resolve()}")
             return 0
         if command == "load":
+            if args.backend == "portable":
+                from .db import PortableGraphBackend
+
+                backend = PortableGraphBackend.from_dir(Path(args.output_dir), ontology_path=Path(args.ontology_path))
+                summary = backend.summary
+                print(
+                    "[cli] Portable backend loaded: "
+                    f"nodes={summary.node_count}, edges={summary.edge_count}, images={summary.image_count}, "
+                    f"stat_source={summary.stat_source}"
+                )
+                print(f"[cli] Portable health: {backend.health()}")
+                return 0
+
             from .db import neo4j_loader
 
             summary = neo4j_loader.execute_load(

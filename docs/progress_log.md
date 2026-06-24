@@ -851,3 +851,47 @@ Next:
 
 - Gate DB-001 closeout can move to DONE once local environment has built KG artifacts and `make load` dry-run is shown in normal environment.
 - Continue with DB-002 portable fallback backend implementation and blocked-state handling when Docker/Neo4j unavailable.
+## 2026-06-25 - Phase 5 Graph Backends Gate (DB-002)
+
+Task:
+
+- Implement portable fallback backend so QA/runtime can run on `data/processed` artifacts when Neo4j/Docker is unavailable.
+- Add `portable_backend` query API scaffold for entity search, subgraph expansion, image retrieval, and stats.
+- Connect CLI `load` command with `--backend portable` and make runner/load path so portable mode is used when no Neo4j password is provided.
+
+Commands run:
+
+- `python -m py_compile src/diabetes_mmkgqa_starter/db/portable_backend.py src/diabetes_mmkgqa_starter/db/__init__.py src/diabetes_mmkgqa_starter/cli.py tests/test_cli_smoke.py tests/test_portable_backend.py`
+- `python -m pytest tests/test_portable_backend.py -q`
+- `python -m pytest tests/test_cli_smoke.py::test_cli_load_portable_backend -q`
+- `python -m pytest tests/test_neo4j_load.py::test_execute_load_dry_run_counts_files -q`
+- `./scripts/run.ps1 load` (failure expected because processed graph artifacts are not yet built in current workspace)
+
+Results:
+
+- Added `src/diabetes_mmkgqa_starter/db/portable_backend.py` with:
+  - `from_dir` factory loader
+  - deterministic in-memory indexes for edges/nodes/images
+  - `search_entities`, `query_subgraph`, `search_images`, `get_stats`, `health`
+  - artifact existence guard (`nodes.csv` and `edges.csv` required)
+- Exported backend classes in `src/diabetes_mmkgqa_starter/db/__init__.py`.
+- Extended `load` CLI with `--backend` flag (`neo4j|portable`) and portable execution path.
+- Updated `Makefile load` to call portable backend automatically when Neo4j password is unavailable.
+- Updated `scripts/run.ps1 load` fallback to invoke CLI `load --backend portable`.
+- Added `tests/test_portable_backend.py` covering load/query/search/subgraph/image/stats behavior.
+- Added `test_cli_load_portable_backend` in `tests/test_cli_smoke.py`.
+- Test results: backend/CLI tests pass under temporary fixtures.
+
+Current status:
+
+- `DB-002` marked `DONE` in `TASKS.md`.
+
+Known blockers:
+
+- `./scripts/run.ps1 load` still fails in this workspace without built `data/processed/nodes.csv` and `edges.csv` (portable mode now requires explicit artifacts).
+- Neo4j/Docker local runtime still unavailable in current thread environment; phase-7 QA/API should consume portable backend in this mode.
+
+Next:
+
+- Run `kg` or `data/processed` generation and then re-run `./scripts/run.ps1 load` to confirm one-command portability path.
+- Begin `QA-001` with stable entity search and intent routing on top of `PortableGraphBackend`.

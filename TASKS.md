@@ -58,7 +58,7 @@ This ledger is the current TODO source. The long-form roadmap is
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
 | DB-001 | DONE | Implement idempotent Neo4j import | Re-running load does not multiply nodes or edges when Neo4j is available |
-| DB-002 | TODO | Implement portable fallback backend | QA can run from processed graph files when Neo4j/Docker is unavailable |
+| DB-002 | DONE | Implement portable fallback backend | QA can run from processed graph files when Neo4j/Docker is unavailable |
 
 ## Phase 6 - QA
 

@@ -22,14 +22,11 @@ up:
 	@echo "TODO: docker compose up -d"
 
 load:
-	@python -m diabetes_mmkgqa_starter.db.neo4j_loader \
-		--repo-root . \
-		--output-dir $(DATA_DIR) \
-		--uri $(NEO4J_URI) \
-		--user $(NEO4J_USER) \
-		--database $(NEO4J_DATABASE) \
-		--ontology-path configs/ontology.yaml \
-		$(if $(NEO4J_PASSWORD),--password $(NEO4J_PASSWORD),--dry-run)
+	@if [ -n "$(NEO4J_PASSWORD)" ]; then \
+		python -m diabetes_mmkgqa_starter.cli load --repo-root . --output-dir $(DATA_DIR) --backend neo4j --neo4j-uri $(NEO4J_URI) --neo4j-user $(NEO4J_USER) --neo4j-password $(NEO4J_PASSWORD) --neo4j-database $(NEO4J_DATABASE) --ontology-path configs/ontology.yaml ; \
+	else \
+		python -m diabetes_mmkgqa_starter.cli load --repo-root . --output-dir $(DATA_DIR) --backend portable --ontology-path configs/ontology.yaml ; \
+	fi
 
 test:
 	@echo "TODO: run tests"

@@ -200,24 +200,28 @@ switch ($Command) {
     }
 
     'load' {
-        Invoke-MakeOrFallback -Target 'load' -FallbackMessage 'make load unavailable; running Neo4j import dry-run helper.' -Fallback {
+        Invoke-MakeOrFallback -Target 'load' -FallbackMessage 'make load unavailable; load helper uses portable backend if Neo4j password absent.' -Fallback {
             if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-                Write-Error 'python is not available; cannot run Neo4j load fallback.'
+                Write-Error 'python is not available; cannot run load fallback.'
                 exit 1
             }
             $args = @(
-                '--dry-run'
+                'load'
+                '--backend', 'portable'
                 '--repo-root', (Get-Location).Path
             )
             if ($Rest -and $Rest.Count -gt 0) {
                 $args = $Rest
             }
+            else {
+                $args += '--output-dir', 'data/processed'
+            }
             $prevPythonPath = $env:PYTHONPATH
             try {
                 $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
-                & python -m diabetes_mmkgqa_starter.db.neo4j_loader @args
+                & python -m diabetes_mmkgqa_starter.cli @args
                 if ($LASTEXITCODE -ne 0) {
-                    Write-Error "neo4j load failed with code $LASTEXITCODE"
+                    Write-Error "load failed with code $LASTEXITCODE"
                     exit $LASTEXITCODE
                 }
             }
