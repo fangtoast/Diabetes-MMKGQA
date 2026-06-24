@@ -1,0 +1,37 @@
+# Python/runtime
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.token
+
+# Raw third-party data and generated data products
+data/raw/**/*.npz
+data/raw/**/*.zip
+data/raw/**/*.tar
+data/raw/**/*.tar.gz
+data/raw/**/*.png
+data/raw/**/*.jpg
+data/raw/**/*.jpeg
+data/raw/**/*.json
+data/interim/
+data/processed/
+deliverables/
+
+# UI/report outputs generated during demo runs
+docs/screenshots/
+docs/cases/*.json
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

@@ -1,0 +1,31 @@
+version: 0.1.0
+sources:
+  - source_id: diakg
+    title: DiaKG annotated diabetes corpus
+    root_file: data/raw/diakg/diakg.json
+    acquisition: Apply/download from the official distribution and place the approved file at root_file.
+    checksum: TO_BE_FILLED_AFTER_DOWNLOAD
+    license_or_terms: Record the exact data-use terms accepted during download; do not redistribute if prohibited.
+    extractor: src/ingestion/diakg_parser.py
+    expected_content: document-paragraph-sentence hierarchy with entity and relation annotations
+    immutable: true
+
+  - source_id: retinamnist
+    title: MedMNIST RetinaMNIST+
+    root_file: data/raw/retinamnist/retinamnist_224.npz
+    acquisition: Download through the official MedMNIST API/distribution.
+    checksum: VERIFY_AGAINST_OFFICIAL_METADATA
+    license_or_terms: CC BY 4.0; cite MedMNIST and the original source dataset.
+    extractor: src/ingestion/retinamnist_parser.py
+    expected_content: train/val/test images and 5-level diabetic-retinopathy labels
+    immutable: true
+
+  - source_id: manual_aliases
+    title: Project-maintained Chinese medical alias dictionary
+    root_file: data/raw/manual/aliases.csv
+    acquisition: Created and reviewed by the project team.
+    checksum: GENERATED_BY_SCRIPT
+    license_or_terms: Project-owned course artifact.
+    extractor: src/normalization/alias_loader.py
+    expected_content: canonical_name, alias, node_type, reviewer, note
+    immutable: true

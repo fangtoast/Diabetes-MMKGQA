@@ -1,0 +1,48 @@
+version: 0.1.0
+intents:
+  - name: disease_drugs
+    entity_types: [Disease]
+    triggers: ["用什么药", "常用药", "治疗药物", "药物有哪些"]
+    relation: TREATED_BY_DRUG
+
+  - name: disease_symptoms
+    entity_types: [Disease]
+    triggers: ["症状", "临床表现", "有什么表现"]
+    relation: HAS_SYMPTOM
+
+  - name: disease_tests
+    entity_types: [Disease]
+    triggers: ["检查", "怎么查", "检查指标"]
+    relations: [RECOMMENDS_TEST, HAS_TEST_ITEM]
+
+  - name: drug_adverse_effects
+    entity_types: [Drug]
+    triggers: ["不良反应", "副作用", "风险"]
+    relation: HAS_ADVERSE_EFFECT
+
+  - name: drug_usage
+    entity_types: [Drug]
+    triggers: ["怎么用", "剂量", "频率", "用法", "疗程"]
+    relations: [HAS_DOSE_AMOUNT, HAS_ADMIN_METHOD, HAS_DOSE_FREQUENCY, HAS_DURATION]
+
+  - name: disease_treatments
+    entity_types: [Disease]
+    triggers: ["怎么治疗", "治疗方法", "非药物治疗", "手术"]
+    relations: [TREATED_BY_DRUG, TREATED_BY_NONDRUG, TREATED_BY_OPERATION]
+
+  - name: disease_anatomy
+    entity_types: [Disease]
+    triggers: ["影响部位", "累及部位", "受累部位"]
+    relation: AFFECTS_ANATOMY
+
+  - name: image_examples_by_grade
+    entity_types: [ImageGrade]
+    triggers: ["示例图", "眼底图", "分级图像", "展示图像"]
+    relation: HAS_IMAGE_GRADE
+
+fallback:
+  strategy: entity_link_then_bounded_graph_search
+  max_hops: 2
+  max_rows: 20
+  allow_llm_rewrite: true
+  allow_llm_generated_cypher: false

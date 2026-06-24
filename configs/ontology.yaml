@@ -1,0 +1,84 @@
+version: 0.1.0
+project_domain: diabetes_and_diabetic_retinopathy
+
+node_types:
+  # DiaKG-derived medical types
+  Disease: {name_zh: 疾病}
+  DiseaseClass: {name_zh: 疾病分期分型}
+  Etiology: {name_zh: 病因}
+  Pathogenesis: {name_zh: 发病机制}
+  Symptom: {name_zh: 临床表现}
+  Test: {name_zh: 检查方法}
+  TestItem: {name_zh: 检查指标}
+  TestValue: {name_zh: 检查指标值}
+  Drug: {name_zh: 药物}
+  DoseFrequency: {name_zh: 用药频率}
+  DoseAmount: {name_zh: 用药剂量}
+  AdministrationMethod: {name_zh: 用药方法}
+  NonDrugTreatment: {name_zh: 非药治疗}
+  Operation: {name_zh: 手术}
+  AdverseEffect: {name_zh: 不良反应}
+  Anatomy: {name_zh: 部位}
+  SeverityLevel: {name_zh: 程度}
+  Duration: {name_zh: 持续时间}
+
+  # Provenance and multimodal types
+  Document: {name_zh: 文档}
+  EvidenceChunk: {name_zh: 证据片段}
+  Image: {name_zh: 医学图像}
+  ImageGrade: {name_zh: 图像分级}
+  Dataset: {name_zh: 数据集}
+  DataSplit: {name_zh: 数据划分}
+
+relations:
+  HAS_CLASS: {domain: [Disease], range: [DiseaseClass]}
+  HAS_CAUSE: {domain: [Disease], range: [Etiology]}
+  HAS_PATHOGENESIS: {domain: [Disease], range: [Pathogenesis]}
+  HAS_SYMPTOM: {domain: [Disease], range: [Symptom]}
+  RECOMMENDS_TEST: {domain: [Disease], range: [Test]}
+  HAS_TEST_ITEM: {domain: [Disease], range: [TestItem]}
+  TREATED_BY_DRUG: {domain: [Disease], range: [Drug]}
+  TREATED_BY_NONDRUG: {domain: [Disease], range: [NonDrugTreatment]}
+  TREATED_BY_OPERATION: {domain: [Disease], range: [Operation]}
+  AFFECTS_ANATOMY: {domain: [Disease], range: [Anatomy]}
+  HAS_ADVERSE_EFFECT: {domain: [Drug], range: [AdverseEffect]}
+  HAS_DOSE_AMOUNT: {domain: [Drug], range: [DoseAmount]}
+  HAS_ADMIN_METHOD: {domain: [Drug], range: [AdministrationMethod]}
+  HAS_DOSE_FREQUENCY: {domain: [Drug], range: [DoseFrequency]}
+  HAS_DURATION: {domain: [Drug], range: [Duration]}
+
+  MENTIONED_IN: {domain: ['*'], range: [EvidenceChunk]}
+  PART_OF_DOCUMENT: {domain: [EvidenceChunk], range: [Document]}
+  IMAGE_ASSOCIATED_WITH: {domain: [Image], range: [Disease]}
+  HAS_IMAGE_GRADE: {domain: [Image], range: [ImageGrade]}
+  FROM_DATASET: {domain: [Image], range: [Dataset]}
+  IN_SPLIT: {domain: [Image], range: [DataSplit]}
+  IS_A: {domain: ['*'], range: ['*']}
+
+required_node_properties:
+  - node_id
+  - node_type
+  - canonical_name
+
+required_edge_properties:
+  - edge_id
+  - source_id
+  - extraction_method
+  - confidence
+
+raw_relation_mapping:
+  Class_Disease: {normalized: HAS_CLASS, reverse: true}
+  Reason_Disease: {normalized: HAS_CAUSE, reverse: true}
+  Pathogenesis_Disease: {normalized: HAS_PATHOGENESIS, reverse: true}
+  Symptom_Disease: {normalized: HAS_SYMPTOM, reverse: true}
+  Test_Disease: {normalized: RECOMMENDS_TEST, reverse: true}
+  Test_items_Disease: {normalized: HAS_TEST_ITEM, reverse: true}
+  Drug_Disease: {normalized: TREATED_BY_DRUG, reverse: true}
+  Treatment_Disease: {normalized: TREATED_BY_NONDRUG, reverse: true}
+  Operation_Disese: {normalized: TREATED_BY_OPERATION, reverse: true}
+  Anatomy_Disease: {normalized: AFFECTS_ANATOMY, reverse: true}
+  ADE_Drug: {normalized: HAS_ADVERSE_EFFECT, reverse: true}
+  Amount_Drug: {normalized: HAS_DOSE_AMOUNT, reverse: true}
+  Method_Drug: {normalized: HAS_ADMIN_METHOD, reverse: true}
+  Frequency_Drug: {normalized: HAS_DOSE_FREQUENCY, reverse: true}
+  Duration_Drug: {normalized: HAS_DURATION, reverse: true}
