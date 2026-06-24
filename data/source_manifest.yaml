@@ -44,7 +44,7 @@ sources:
     title: Manual A-layer term table
     root_file: data/raw/manual/a_general_terms.csv
     acquisition: Curated project-maintained table of medical terms.
-    checksum: TO_BE_GENERATED
+    checksum: md5:0c870ff021f6299a1721de5e70ea7304
     license_or_terms: Project-maintained course artifact.
     extractor: src/ingestion/manual_ab_tables.py
     expected_content: CSV columns such as canonical_name, node_type, synonyms, description
@@ -54,7 +54,7 @@ sources:
     title: Manual ICD-10-CM subset
     root_file: data/raw/manual/b_icd10_subset.csv
     acquisition: Small project-maintained subset selected from public ICD-10-CM tables.
-    checksum: TO_BE_GENERATED
+    checksum: md5:c74b3aa1df47f5bafebeac74802aa26a
     license_or_terms: Public source terms from CDC/WHO where applicable; include citation URL in docs.
     extractor: src/ingestion/manual_ab_tables.py
     expected_content: CSV columns such as disease_name, icd_code, disease_layer, note
@@ -64,7 +64,7 @@ sources:
     title: Manual guideline and threshold table
     root_file: data/raw/manual/b_guideline_rules.csv
     acquisition: Manually extracted rule subset from public guideline/ADA/WHO references.
-    checksum: TO_BE_GENERATED
+    checksum: md5:3aebdc04cabcc4ac96b2a88b8776a70f
     license_or_terms: Respect source references and include citation links in docs.
     extractor: src/ingestion/manual_ab_tables.py
     expected_content: CSV columns such as disease_name, rule_type, code, value, unit, source_ref, comments
@@ -74,7 +74,7 @@ sources:
     title: Manual hypertension standard rules
     root_file: data/raw/manual/c_hypertension_rules.csv
     acquisition: Manually curated hypertension starter rule table for C-layer use.
-    checksum: TO_BE_GENERATED
+    checksum: md5:ca7e9d084fe8a06695f67f2785bd1e9d
     license_or_terms: Project-maintained course artifact.
     extractor: src/ingestion/manual_ab_tables.py
     expected_content: CSV columns such as rule_name, disease_name, finding, severity, recommendation, source
@@ -84,7 +84,7 @@ sources:
     title: Project-maintained Chinese medical alias dictionary
     root_file: data/raw/manual/aliases.csv
     acquisition: Created and reviewed by the project team.
-    checksum: GENERATED_BY_SCRIPT
+    checksum: md5:af04fb5f0e0af4792587f2df246c5710
     license_or_terms: Project-owned course artifact.
     extractor: src/normalization/alias_loader.py
     expected_content: canonical_name, alias, node_type, reviewer, note

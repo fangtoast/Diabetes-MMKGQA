@@ -1,0 +1,6 @@
+canonical_name,node_type,synonyms,description
+糖尿病,Disease,DM;Diabetes mellitus;T1DM;T2DM,慢性代谢性疾病，表现为高血糖及相关并发症风险。
+糖尿病视网膜病变,Disease,DR;糖网,糖尿病相关微血管病变，可导致视网膜损伤。
+高血压,Disease,HTN;Hypertension,动脉血压长期升高导致心血管和视网膜等并发风险。
+肺炎,Disease,Pneumonia;肺部感染,感染性肺实质炎症，通常伴随咳嗽、发热与影像异常。
+视网膜检查,TestItem,眼底照相;眼底检查,用于观察视网膜及其相关病变的检查。

@@ -505,3 +505,30 @@ Blockers:
 Next:
 
 - `DATA-004`（创建 A/B/C 手工 CSV 表：a_general_terms / b_icd10_subset / b_guideline_rules / c_hypertension_rules / aliases）。
+## 2026-06-24 - Phase 2 Data Gate (DATA-004)
+
+Task:
+- Create A/B/C manual tables and deterministic fixtures: `a_general_terms`, `b_icd10_subset`, `b_guideline_rules`, `c_hypertension_rules`, and `aliases`.
+
+Commands run:
+- `python -c "import hashlib, pathlib, csv\nfor p in ['data/raw/manual/a_general_terms.csv','data/raw/manual/b_icd10_subset.csv','data/raw/manual/b_guideline_rules.csv','data/raw/c_hypertension_rules.csv','data/raw/manual/aliases.csv']:\n    data = pathlib.Path(p).read_bytes(); print(f'{pathlib.Path(p).name}:{hashlib.md5(data).hexdigest()}')"`
+- `python - <<'PY'\nimport hashlib, pathlib\nfor p in ['data/raw/manual/a_general_terms.csv','data/raw/manual/b_icd10_subset.csv','data/raw/manual/b_guideline_rules.csv','data/raw/c_hypertension_rules.csv','data/raw/manual/aliases.csv']:\n    b=pathlib.Path(p).read_bytes()\n    print(f"{pathlib.Path(p).name}: md5:{hashlib.md5(b).hexdigest()}")\nPY`
+- `python -m pytest tests/test_data_sources.py`
+- `python -m pytest`
+- `python -c "from pathlib import Path\nimport yaml\nm=yaml.safe_load(Path('data/source_manifest.yaml').read_text(encoding='utf-8'))['sources'];\nfor k in ['manual_a_general_terms','manual_b_icd10_subset','manual_b_guideline_rules','manual_c_hypertension_rules','manual_aliases']:\n    print(k,m[k]['checksum'])"`
+- `python - <<'PY'\nimport yaml, csv, pathlib\nm=yaml.safe_load(pathlib.Path('data/source_manifest.yaml').read_text(encoding='utf-8'))['sources']\nfor k, v in m.items():\n    if k.startswith('manual_') and not v['type'].startswith('raw'): continue\nPY`
+- `git status --short`
+
+Result:
+- Added manual A/B/C CSV fixtures under `data/raw/manual/` with deterministic stable columns and IDs.
+- Updated `data/source_manifest.yaml` with concrete md5 checksums for all manual files.
+- Added/ran CSV schema + checksum test coverage in `tests/test_data_sources.py`.
+- Added evidence in `TASKS.md` that `DATA-004` is DONE.
+- (To re-confirm in this round) manual CSV checksums were recomputed and verified against manifest.
+
+Blockers:
+- None for dataset fixture generation itself.
+- Continued attention needed for downstream parser implementation (`INGEST-001` / `INGEST-002` / `INGEST-003` / `INGEST-004` / `NORM-001`).
+
+Next:
+- 继续执行 `INGEST-001`：实现 A/B 手工表解析器，并补齐其测试与确定性输出。

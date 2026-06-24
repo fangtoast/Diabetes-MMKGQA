@@ -1,0 +1,4 @@
+rule_name,disease_name,finding,severity,recommendation,source
+HTN-BASE,高血压,高危分层（1级）,轻度,优先生活方式干预并观察，必要时低剂量降压方案,课程版课程资料
+HTN-BP-FU,高血压,动态血压监测,一般,至少观察3次、按周复测，结合症状与靶器官风险,课程版课程资料
+HTN-COMP,高血压,并发风险升高,高,结合糖尿病/视网膜表现评估联合治疗策略,教学规则示例

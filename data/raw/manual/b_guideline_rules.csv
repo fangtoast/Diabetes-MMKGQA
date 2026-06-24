@@ -1,0 +1,6 @@
+disease_name,rule_type,code,value,unit,source_ref,comments
+糖尿病,诊断阈值,FPG,7.0,mmol/L,ADA 2024,空腹血糖阈值（教学用途）。
+糖尿病,参考范围,HbA1c,<7.0/目标,%,ADA 2024,长期管理常见目标参考值。
+高血压,血压阈值,SBP,<=140,mmHg,ESC 2024,收缩压目标（教学示例）。
+高血压,血压阈值,DBP,<=90,mmHg,ESC 2024,舒张压目标（教学示例）。
+肺炎,影像表现,胸片,肺实质斑片影/浸润,,WHO 技术资料,教学示例。

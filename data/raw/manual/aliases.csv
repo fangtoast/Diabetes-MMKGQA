@@ -1,0 +1,6 @@
+canonical_name,alias,node_type,reviewer,note
+糖尿病,diabetes,Disease,Team,英文映射
+糖尿病,糖尿病病人,Disease,Team,口语变体
+高血压,hypertension,Disease,Team,英文映射
+糖尿病视网膜病变,diabetic retinopathy,Disease,Team,英文映射
+视网膜检查,fundus photograph,TestItem,Team,英文映射

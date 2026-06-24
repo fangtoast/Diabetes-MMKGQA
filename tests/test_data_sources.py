@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 import json
+import csv
+import hashlib
 
 import yaml
 
@@ -76,3 +78,39 @@ def test_fetch_diakg_dry_run_script():
     out = result.stdout
     assert "diakg" in out
     assert "fallback_fixture" in out
+
+
+def _md5_hex(path: Path) -> str:
+    h = hashlib.md5()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return f"md5:{h.hexdigest()}"
+
+
+def test_manual_csvs_exist_and_schema_and_checksums():
+    root = _repo_root() / "data" / "source_manifest.yaml"
+    with root.open("r", encoding="utf-8") as f:
+        manifest = yaml.safe_load(f)
+    source_map = {item["source_id"]: item for item in manifest["sources"]}
+
+    rows = [
+        ("manual_a_general_terms", "a_general_terms.csv", ["canonical_name", "node_type", "synonyms", "description"]),
+        ("manual_b_icd10_subset", "b_icd10_subset.csv", ["disease_name", "icd_code", "disease_layer", "note"]),
+        ("manual_b_guideline_rules", "b_guideline_rules.csv", ["disease_name", "rule_type", "code", "value", "unit", "source_ref", "comments"]),
+        ("manual_c_hypertension_rules", "c_hypertension_rules.csv", ["rule_name", "disease_name", "finding", "severity", "recommendation", "source"]),
+        ("manual_aliases", "aliases.csv", ["canonical_name", "alias", "node_type", "reviewer", "note"]),
+    ]
+
+    for source_id, filename, required in rows:
+        src = source_map[source_id]
+        path = _repo_root() / src["root_file"]
+        assert path.exists(), f"{filename} must exist"
+        assert _md5_hex(path) == src["checksum"], f"{filename} checksum mismatch"
+
+        with path.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f)
+            assert reader.fieldnames is not None
+            assert set(required).issubset(set(reader.fieldnames))
+            data_rows = list(reader)
+            assert data_rows, f"{filename} must contain at least one row"
