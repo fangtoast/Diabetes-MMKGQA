@@ -467,3 +467,41 @@ Blockers:
 Next:
 
 - `DATA-003`（DiaKG 授权下载/申请说明 + fixture）
+## 2026-06-24 - Phase 2 Data Gate (DATA-003)
+
+Task:
+
+- Register DiaKG source handling (authorized-path documentation + fallback fixture) and wire it into the data workflow.
+
+Commands run:
+
+- `New-Item` to ensure `data/raw/diakg/` exists from prior contract gate.
+- `New-Content` create `data/raw/diakg/diakg_fixture.json` (minimal document/paragraph/sentence structure).
+- `Set-Content` add `docs/diakg_acquisition.md` (authorization path, fallback policy, commands).
+- `Set-Content` add `scripts/fetch_diakg.py` with manifest-aware dry-run + optional download using `DIAKG_SOURCE_URL`.
+- `python scripts/fetch_diakg.py --dry-run`
+- `Get-Content data/source_manifest.yaml` update `manual_diakg_fallback.checksum`.
+- `python scripts/fetch_medmnist.py --dataset all --dry-run`
+- `python scripts/fetch_diakg.py --dry-run`
+- `./scripts/run.ps1 data`
+- `python -m pytest tests/test_data_sources.py`
+- `python -m pytest`
+
+Result:
+
+- DiaKG fetch workflow exists with explicit authorization-first behavior and clear blocked condition when URL is not configured.
+- Offline-development fixture file added and manifest checksum recorded.
+- `docs/diakg_acquisition.md` documented both authorized-fetch and fallback paths.
+- `scripts/run.ps1 data` now runs:
+  - `scripts/fetch_medmnist.py`
+  - `scripts/fetch_diakg.py`
+- New tests added in `tests/test_data_sources.py` for DiKG fixture schema and fetch script dry-run.
+- `TASKS.md`: `DATA-003` set to `DONE`.
+
+Blockers:
+
+- Automated DiaKG download still requires external authorized URL; if unavailable, this task uses fallback fixture and the blocked path is explicitly documented.
+
+Next:
+
+- `DATA-004`（创建 A/B/C 手工 CSV 表：a_general_terms / b_icd10_subset / b_guideline_rules / c_hypertension_rules / aliases）。

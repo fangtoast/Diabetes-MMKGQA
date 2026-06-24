@@ -14,7 +14,7 @@ sources:
     title: DiaKG fallback fixture for offline development
     root_file: data/raw/diakg/diakg_fixture.json
     acquisition: Create a small, manually reviewed fixture copied from approved source snippets when automatic download is unavailable.
-    checksum: local_managed
+    checksum: md5:6fa2487c214e7a2c288f901440c5014d
     license_or_terms: Must follow upstream terms; fixture contains only derived training subset for project development.
     extractor: src/ingestion/diakg_parser.py
     expected_content: minimal DiaKG-like records including entity and relation examples

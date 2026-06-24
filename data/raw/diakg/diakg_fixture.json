@@ -1,0 +1,88 @@
+{
+  "source_id": "diakg",
+  "documents": [
+    {
+      "document_id": "diakg_doc_001",
+      "title": "糖尿病视网膜病变知识样例",
+      "paragraphs": [
+        {
+          "paragraph_id": "para_001",
+          "sentences": [
+            {
+              "sentence_id": "sent_001",
+              "text": "长期高血糖可能导致糖尿病视网膜病变，表现为视网膜微血管损伤。",
+              "entities": [
+                {
+                  "text": "糖尿病",
+                  "entity_type": "Disease",
+                  "entity_id": "ent_0001",
+                  "canonical_name": "糖尿病"
+                },
+                {
+                  "text": "糖尿病视网膜病变",
+                  "entity_type": "Disease",
+                  "entity_id": "ent_0002",
+                  "canonical_name": "糖尿病视网膜病变"
+                },
+                {
+                  "text": "视网膜微血管损伤",
+                  "entity_type": "Symptom",
+                  "entity_id": "ent_0003",
+                  "canonical_name": "视网膜微血管损伤"
+                }
+              ],
+              "relations": [
+                {
+                  "head": "糖尿病",
+                  "relation": "HAS_SYMPTOM",
+                  "tail": "视网膜微血管损伤"
+                },
+                {
+                  "head": "糖尿病视网膜病变",
+                  "relation": "MENTIONED_IN",
+                  "tail": "sent_001"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "document_id": "diakg_doc_002",
+      "title": "糖尿病合并高血压知识样例",
+      "paragraphs": [
+        {
+          "paragraph_id": "para_002",
+          "sentences": [
+            {
+              "sentence_id": "sent_002",
+              "text": "高血压是糖尿病患者常见并存疾病，会增加血管并发症风险。",
+              "entities": [
+                {
+                  "text": "高血压",
+                  "entity_type": "Disease",
+                  "entity_id": "ent_0010",
+                  "canonical_name": "高血压"
+                },
+                {
+                  "text": "糖尿病",
+                  "entity_type": "Disease",
+                  "entity_id": "ent_0001",
+                  "canonical_name": "糖尿病"
+                }
+              ],
+              "relations": [
+                {
+                  "head": "高血压",
+                  "relation": "HAS_CAUSE",
+                  "tail": "糖尿病"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

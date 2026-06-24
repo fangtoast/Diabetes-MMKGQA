@@ -158,6 +158,13 @@ switch ($Command) {
                 Write-Error "data workflow failed with code $LASTEXITCODE"
                 exit $LASTEXITCODE
             }
+
+            Write-Host '---' 
+            & python scripts/fetch_diakg.py --dry-run
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "DiaKG workflow check failed with code $LASTEXITCODE"
+                exit $LASTEXITCODE
+            }
         }
     }
 
