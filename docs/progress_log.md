@@ -1180,3 +1180,33 @@ Next:
 
 - 进入 `DOC-001`：补充 `README` 与报告输入材料。
 - 后续 `PKG-001` 完成最终打包说明与交付说明。
+
+## 2026-06-25 - Phase 8 Demo/Report Gate (DOC-001)
+
+Task:
+
+- 完成最终 README 与报告输入材料补齐：将 DOC-001 任务状态置为 DONE。
+
+Commands run:
+
+- `$env:PYTHONPATH='D:/project/diabetes_mmkgqa_starter/src'; python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json --demo-screenshot-dir docs/screenshots --no-demo-screenshots`
+- `python scripts/assemble_report_inputs.py`
+- `./scripts/run.ps1 report`
+
+Result:
+
+- 生成固定演示文件：`docs/cases/demo_cases.json`。
+- 生成报告输入汇总：`docs/report_inputs.md`（包含 stats 中的规模指标、source manifest 表、demo case 清单）。
+- `./scripts/run.ps1 report` 执行通过（`make` 在当前环境不可用），最终落地到 `docs/report_inputs.md`。
+
+Task status change:
+
+- `DOC-001` 标记为 `DONE`。
+
+Blockers:
+
+- 未在本轮完成截图演示（`--no-demo-screenshots`）用于 demo 和报告输入；待浏览器就绪环境补齐截图。
+
+Next:
+
+- 进入 `PKG-001`：补齐 deliverables 打包说明与目录结构，确保不打包 unauthorized raw data。

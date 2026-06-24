@@ -31,15 +31,15 @@
 ## 快速命令（阶段目标达成后可用）
 
 ```bash
-make bootstrap
-make data
-make kg
-make up
-make load
-make demo
-make verify
-make report
-make package
+make bootstrap   # 使用 pyproject/requirements 锁定依赖后执行
+make data       # 生成/校验源数据与中间数据
+make kg         # 构建图谱与 stats/schema 导出
+make load       # 优先使用 portable backend
+make up         # 启动 API + 前端
+make demo       # 生成固定 demo case（docs/cases/demo_cases.json）
+make report     # 组装报告输入材料 docs/report_inputs.md
+make verify     # 待补齐 lint/完整 smoke 后再补齐
+make package    # 打包说明与 deliverables 目录（后续完成）
 ```
 
 > 某些命令可在 `scripts/run.ps1` 中通过 PowerShell 运行，若当前环境未提供 `make/docker/uv` 将在实现中提供兼容方式。
@@ -49,3 +49,12 @@ make package
 - 阶段任务源：`TASKS.md`
 - 完成记录：`docs/progress_log.md`
 - 项目目标与约束请严格遵循 `AGENTS.md`
+
+## 报告材料与复现命令
+
+- `docs/report_inputs.md`：固定复现材料清单（`stats`、`source manifest`、demo case 清单、交付文件）。
+- `docs/cases/demo_cases.json`：固定演示 5 个用例（含 evidence/source/kg_version/safety_notice 输出字段）。
+- 重新生成报告输入材料：
+  ```bash
+  python scripts/assemble_report_inputs.py
+  ```

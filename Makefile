@@ -38,7 +38,7 @@ demo:
 	@PYTHONPATH=src python -m diabetes_mmkgqa_starter.cli demo
 
 report:
-	@echo "TODO: assemble report inputs or generate docx"
+	@python scripts/assemble_report_inputs.py
 
 package:
 	@echo "TODO: create final deliverable archives"

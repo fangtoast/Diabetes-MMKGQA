@@ -124,7 +124,16 @@ function Invoke-Report {
     Write-Host '=== report ==='
     Ensure-Dir docs/cases
     Ensure-Dir docs/screenshots
-    Write-Placeholder 'Report command is scaffolded. Will collect stats/docs/screenshots in docs/cases and docs/screenshots.'
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        Write-Error 'Python is required to assemble report inputs.'
+        exit 1
+    }
+    & python scripts/assemble_report_inputs.py
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "report command failed with code $LASTEXITCODE"
+        exit $LASTEXITCODE
+    }
+    Write-Host "Report inputs saved to docs/report_inputs.md" -ForegroundColor Green
 }
 
 function Invoke-Package {
