@@ -782,3 +782,32 @@ Blockers:
 Next:
 - `GRAPH-003`（分层统计产出对齐）。
 - `DB-001`（Neo4j 幂等导入）准备就绪后继续。
+
+## 2026-06-25 - Phase 4 Graph Build Gate (GRAPH-003)
+
+Task:
+- Generate layered statistics and required metrics in `stats.json` from graph outputs (`node_layer_counts`, `edge_layer_counts`, `A/B/C` 细分).
+
+Commands run:
+- `python -m pytest tests/test_graph_build.py -q`
+- `python -m pytest`
+- `./scripts/run.ps1 test`
+- `make verify`（记录为 BLOCKED，`make` 不可用）
+
+Result:
+- 在 `src/diabetes_mmkgqa_starter/graph_builder.py` 增加 `layered_statistics` 产出：
+  - A/B/C 节点与边总计
+  - B 层关键节点细分（ICD_Code、Guideline、StandardRule、ReferenceRange）
+  - C 层关键节点与多模态边细分（Disease、Image、图像关系边）
+- 在 `tests/test_graph_build.py` 增加分层统计验证：
+  - 校验分层统计主入口字段存在
+  - 校验 `layer_counts` 与顶层分层计数一致
+  - 校验 B/C 层细分计数与实际节点/边一致
+- 全量验证通过：22 passed。
+- 更新 `TASKS.md`：`GRAPH-003` 标记为 DONE。
+
+Blockers:
+- `make` 不可用导致 `make verify` 常规路径 BLOCKED；`scripts/run.ps1 test` 提供回退执行。
+
+Next:
+- `DB-001`（幂等 Neo4j 导入）与 `DB-002`（portable backend）开始。

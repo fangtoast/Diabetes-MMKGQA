@@ -250,6 +250,42 @@ def _relation_counts(rows: list[dict]) -> dict[str, int]:
     return counts
 
 
+def _build_layered_statistics(nodes: list[dict], edges: list[dict]) -> dict[str, int]:
+    node_type_counts: dict[str, int] = {}
+    for row in nodes:
+        node_type = row.get("node_type", "")
+        node_type_counts[node_type] = node_type_counts.get(node_type, 0) + 1
+
+    multimodal_relations = {"IMAGE_ASSOCIATED_WITH", "HAS_IMAGE_GRADE", "FROM_DATASET", "IN_SPLIT"}
+    return {
+        "layer_counts": {
+            "node": _node_counts_by_layer(nodes),
+            "edge": _edge_counts_by_layer(edges),
+        },
+        "layer_breakdown": {
+            "A": {
+                "node_count": _node_counts_by_layer(nodes).get("A", 0),
+                "edge_count": _edge_counts_by_layer(edges).get("A", 0),
+            },
+            "B": {
+                "node_count": _node_counts_by_layer(nodes).get("B", 0),
+                "edge_count": _edge_counts_by_layer(edges).get("B", 0),
+                "icd_code_count": node_type_counts.get("ICD_Code", 0),
+                "guideline_count": node_type_counts.get("Guideline", 0),
+                "standard_rule_count": node_type_counts.get("StandardRule", 0),
+                "reference_range_count": node_type_counts.get("ReferenceRange", 0),
+            },
+            "C": {
+                "node_count": _node_counts_by_layer(nodes).get("C", 0),
+                "edge_count": _edge_counts_by_layer(edges).get("C", 0),
+                "disease_count": node_type_counts.get("Disease", 0),
+                "image_node_count": node_type_counts.get("Image", 0),
+                "multimodal_edge_count": len([row for row in edges if row.get("relation") in multimodal_relations]),
+            },
+        },
+    }
+
+
 def _validate_graph_schema(
     ontology: dict,
     nodes: list[dict],
@@ -472,6 +508,7 @@ def _build_stats(
         "provenance_edge_count": len(provenance),
         "node_layer_counts": _node_counts_by_layer(nodes),
         "edge_layer_counts": _edge_counts_by_layer(edges),
+        "layered_statistics": _build_layered_statistics(nodes, edges),
         "triple_layer_counts": triple_layers,
         "warnings": warnings,
         "schema_validation": schema_issues,

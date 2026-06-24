@@ -75,10 +75,32 @@ def test_graph_stats_include_layer_counts_and_provenance(tmp_path: Path):
     stats = result.stats
     assert "edge_layer_counts" in stats
     assert "node_layer_counts" in stats
+    assert "layered_statistics" in stats
     assert "schema_validation" in stats
     assert "provenance_edge_count" in stats
     assert stats["provenance_edge_count"] >= 0
     assert stats["schema_validation"]["relation_violations"] is not None
+    assert stats["layered_statistics"]["layer_counts"]["node"] == stats["node_layer_counts"]
+    assert stats["layered_statistics"]["layer_counts"]["edge"] == stats["edge_layer_counts"]
+    assert "A" in stats["layered_statistics"]["layer_breakdown"]
+    assert "B" in stats["layered_statistics"]["layer_breakdown"]
+    assert "C" in stats["layered_statistics"]["layer_breakdown"]
+    b_layer = stats["layered_statistics"]["layer_breakdown"]["B"]
+    c_layer = stats["layered_statistics"]["layer_breakdown"]["C"]
+
+    assert b_layer["icd_code_count"] == len([node for node in result.nodes if node.get("node_type") == "ICD_Code"])
+    assert b_layer["guideline_count"] == len([node for node in result.nodes if node.get("node_type") == "Guideline"])
+    assert b_layer["standard_rule_count"] == len([node for node in result.nodes if node.get("node_type") == "StandardRule"])
+    assert b_layer["reference_range_count"] == len([node for node in result.nodes if node.get("node_type") == "ReferenceRange"])
+    assert c_layer["disease_count"] == len([node for node in result.nodes if node.get("node_type") == "Disease"])
+    assert c_layer["image_node_count"] == len([node for node in result.nodes if node.get("node_type") == "Image"])
+    assert c_layer["multimodal_edge_count"] == len(
+        [
+            edge
+            for edge in result.edges
+            if edge.get("relation") in {"IMAGE_ASSOCIATED_WITH", "HAS_IMAGE_GRADE", "FROM_DATASET", "IN_SPLIT"}
+        ]
+    )
 
 
 def test_graph_quality_gate_has_expected_fields(tmp_path: Path):

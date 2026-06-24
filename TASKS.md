@@ -51,7 +51,7 @@ This ledger is the current TODO source. The long-form roadmap is
 |---|---|---|---|
 | GRAPH-001 | DONE | Build portable graph exports | Nodes, edges, triples, evidence, images, schema, stats, and graphml are generated |
 | GRAPH-002 | DONE | Implement graph quality checks | Domain/range, endpoints, self-loops, provenance, evidence, and image paths validate |
-| GRAPH-003 | TODO | Generate layered statistics | A/B/C counts and required total metrics are generated from `stats.json` |
+| GRAPH-003 | DONE | Generate layered statistics | A/B/C counts and required total metrics are generated from `stats.json` |
 
 ## Phase 5 - Graph backends
 
