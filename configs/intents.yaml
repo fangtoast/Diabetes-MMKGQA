@@ -1,48 +1,199 @@
-version: 0.1.0
+﻿version: 0.2.0
 intents:
-  - name: disease_drugs
-    entity_types: [Disease]
-    triggers: ["用什么药", "常用药", "治疗药物", "药物有哪些"]
-    relation: TREATED_BY_DRUG
-
   - name: disease_symptoms
+    description: Query known symptoms associated with a disease
     entity_types: [Disease]
-    triggers: ["症状", "临床表现", "有什么表现"]
+    triggers:
+      - 症状
+      - 表现
+      - 表现为
+      - 典型症状
+      - 有哪些症状
     relation: HAS_SYMPTOM
 
   - name: disease_tests
+    description: Query recommended tests for a disease
     entity_types: [Disease]
-    triggers: ["检查", "怎么查", "检查指标"]
-    relations: [RECOMMENDS_TEST, HAS_TEST_ITEM]
+    triggers:
+      - 检查
+      - 检验
+      - 建议检查
+      - 检查项
+      - 需要做哪些检查
+    relations:
+      - RECOMMENDS_TEST
+      - HAS_TEST_ITEM
+
+  - name: disease_drugs
+    description: Query drugs used to manage a disease
+    entity_types: [Disease]
+    triggers:
+      - 用药
+      - 用于治疗
+      - 药物
+      - 药物治疗
+      - 推荐用药
+    relation: TREATED_BY_DRUG
 
   - name: drug_adverse_effects
+    description: Query known adverse effects of a drug
     entity_types: [Drug]
-    triggers: ["不良反应", "副作用", "风险"]
+    triggers:
+      - 不良反应
+      - 不舒服
+      - 药物副作用
+      - 会有什么副作用
     relation: HAS_ADVERSE_EFFECT
 
   - name: drug_usage
+    description: Query administration details of a drug
     entity_types: [Drug]
-    triggers: ["怎么用", "剂量", "频率", "用法", "疗程"]
-    relations: [HAS_DOSE_AMOUNT, HAS_ADMIN_METHOD, HAS_DOSE_FREQUENCY, HAS_DURATION]
-
-  - name: disease_treatments
-    entity_types: [Disease]
-    triggers: ["怎么治疗", "治疗方法", "非药物治疗", "手术"]
-    relations: [TREATED_BY_DRUG, TREATED_BY_NONDRUG, TREATED_BY_OPERATION]
+    triggers:
+      - 用法
+      - 用量
+      - 用药剂量
+      - 剂量
+      - 给药频率
+      - 用药频次
+      - 持续时间
+    relations:
+      - HAS_DOSE_AMOUNT
+      - HAS_ADMIN_METHOD
+      - HAS_DOSE_FREQUENCY
+      - HAS_DURATION
 
   - name: disease_anatomy
+    description: Query anatomy structures related to a disease
     entity_types: [Disease]
-    triggers: ["影响部位", "累及部位", "受累部位"]
+    triggers:
+      - 影响部位
+      - 解剖
+      - 哪个解剖部位
+      - 受累组织
     relation: AFFECTS_ANATOMY
 
+  - name: disease_class
+    description: Query category/type for a disease
+    entity_types: [Disease]
+    triggers:
+      - 分类
+      - 属于哪一类
+      - 疾病类型
+    relation: HAS_CLASS
+
+  - name: disease_guideline
+    description: Query guideline references for a disease
+    entity_types: [Disease]
+    triggers:
+      - 指南
+      - 依据
+      - 治疗依据
+      - 指导原则
+    relation: GOVERNED_BY
+
+  - name: icd_lookup
+    description: Query ICD code for a disease
+    entity_types: [Disease]
+    triggers:
+      - ICD
+      - ICD编码
+      - 诊断码
+      - 编码
+      - 疾病编号
+    relation: HAS_ICD_CODE
+
+  - name: test_reference
+    description: Query reference ranges for tests
+    entity_types: [TestItem]
+    triggers:
+      - 参考范围
+      - 正常范围
+      - 检查范围
+      - 标准范围
+    relation: HAS_REFERENCE_RANGE
+
+  - name: test_unit
+    description: Query units for tests or drugs
+    entity_types: [TestItem, Drug]
+    triggers:
+      - 单位
+      - 计量单位
+      - 单位是多少
+    relation: HAS_UNIT
+
+  - name: test_threshold
+    description: Query diagnostic threshold for a test item
+    entity_types: [TestItem]
+    triggers:
+      - 诊断阈值
+      - 分界值
+      - 阳性阈值
+      - cutoff
+    relation: HAS_DIAGNOSTIC_THRESHOLD
+
+  - name: disease_stage
+    description: Query disease stage definitions
+    entity_types: [Disease]
+    triggers:
+      - 分期
+      - 阶段
+      - 病程分期
+      - 分级
+    relation: HAS_STAGE
+
   - name: image_examples_by_grade
+    description: Query images with a specific image grade
     entity_types: [ImageGrade]
-    triggers: ["示例图", "眼底图", "分级图像", "展示图像"]
+    triggers:
+      - 图片分级
+      - 影像分级
+      - 视网膜分级
+      - 展示该分级图像
     relation: HAS_IMAGE_GRADE
+
+  - name: image_examples_by_disease
+    description: Query image examples for a disease
+    entity_types: [Disease]
+    triggers:
+      - 影像示例
+      - 相关图片
+      - 图像展示
+      - 看图片
+    relation: IMAGE_ASSOCIATED_WITH
+
+  - name: image_examples_by_dataset
+    description: Query images from a dataset
+    entity_types: [Dataset]
+    triggers:
+      - RetinaMNIST
+      - PneumoniaMNIST
+      - 影像数据集
+      - 数据集图片
+    relation: FROM_DATASET
+
+  - name: image_examples_by_split
+    description: Query images by split
+    entity_types: [DataSplit]
+    triggers:
+      - 训练集
+      - 验证集
+      - 测试集
+      - 数据拆分
+    relation: IN_SPLIT
+
+  - name: casedemo_lookup
+    description: Query sample cases if available
+    entity_types: [Disease]
+    triggers:
+      - 病例
+      - 示例病例
+      - 临床案例
+      - 示例样本
+    relation: HAS_CASE
 
 fallback:
   strategy: entity_link_then_bounded_graph_search
   max_hops: 2
   max_rows: 20
-  allow_llm_rewrite: true
+  allow_llm_rewrite: false
   allow_llm_generated_cypher: false

@@ -98,3 +98,40 @@ Next:
 
 - Next task: `QA-CONTRACT-001` (intent contract upgrade).
 
+## 2026-06-24 - Phase 0 Contract Upgrade (QA-CONTRACT-001)
+
+Task:
+
+- Upgrade `configs/intents.yaml` to include A/B/C medical intents and image retrieval
+  intents aligned with `configs/ontology.yaml`.
+
+Commands run:
+
+- Read source-of-truth files:
+  `AGENTS.md`, `docs/project_plan.md`, `TASKS.md`, `docs/progress_log.md`,
+  `docs/architecture.md`, `configs/ontology.yaml`, `configs/intents.yaml`,
+  `data/source_manifest.yaml`.
+- Replaced `configs/intents.yaml` with a valid A/B/C/image-aligned contract, including:
+  - Relation mapping for Disease, TestItem, Drug, Guideline, ICD, Unit, Dataset, split, and image nodes.
+  - Safe fallback settings (`allow_llm_rewrite: false`, `allow_llm_generated_cypher: false`).
+
+Result:
+
+- `QA-CONTRACT-001` set to DONE.
+- Intent contract is valid YAML and aligned with ontology relations.
+- Verified with:
+  - `intents_loaded= True`
+  - `intent_count= 18`
+  - `max_rows= 20`
+  - `allow_llm_rewrite= False`
+  - `allow_llm_generated_cypher= False`
+  - `relations_ok= 22 mapped 32`
+
+Blockers:
+
+- No blockers in this task.
+
+Next:
+
+- Next task: `DATA-CONTRACT-001` (register/upgrade data source manifest).
+

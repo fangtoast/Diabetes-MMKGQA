@@ -13,7 +13,7 @@ This ledger is the current TODO source. The long-form roadmap is
 | PLAN-002 | DONE | Add long-running Codex target prompt | `docs/codex_target_prompt.md` exists and includes frontend plugin, docs, TODO, and Git discipline |
 | PLAN-003 | DONE | Upgrade architecture document | `docs/architecture.md` matches the A/B/C layered multi-disease scope |
 | SCHEMA-001 | DONE | Upgrade ontology contract | `configs/ontology.yaml` includes A/B/C node and relation types plus required layer properties |
-| QA-CONTRACT-001 | TODO | Upgrade intent contract | `configs/intents.yaml` includes A-layer, B-layer, C-layer, and image QA intents |
+| QA-CONTRACT-001 | DONE | Upgrade intent contract | `configs/intents.yaml` includes A-layer, B-layer, C-layer, and image QA intents |
 | DATA-CONTRACT-001 | TODO | Upgrade source manifest | `data/source_manifest.yaml` registers DiaKG, RetinaMNIST, PneumoniaMNIST, A/B manual tables, hypertension rules, and aliases |
 | DOC-BOOT-001 | TODO | Update README entry points | Root docs link to project plan, target prompt, task ledger, and progress log |
 
