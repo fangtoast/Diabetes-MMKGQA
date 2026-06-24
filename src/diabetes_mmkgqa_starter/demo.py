@@ -81,6 +81,7 @@ def run_demo_cases(
     demo_cases = cases or list(DEFAULT_DEMO_CASES)
     backend = PortableGraphBackend.from_dir(processed_dir)
     service = QAService(backend=backend, intents_path=intents_path)
+    repo_root = Path(repo_root).resolve()
 
     output_dir.mkdir(parents=True, exist_ok=True)
     screenshot_dir.mkdir(parents=True, exist_ok=True)
@@ -110,7 +111,20 @@ def run_demo_cases(
 
     for case in normalized_cases:
         matching = [item for item in screenshot_payloads if item["case_id"] == case["case_id"]]
-        case["screenshot"] = matching[0] if matching else {"path": None, "status": "not_captured"}
+        if matching:
+            path = matching[0].get("path")
+            if path:
+                try:
+                    path = str(Path(path).resolve().relative_to(repo_root))
+                except ValueError:
+                    pass
+            case["screenshot"] = {
+                "case_id": matching[0]["case_id"],
+                "path": path,
+                "status": matching[0].get("status", "not_captured"),
+            }
+        else:
+            case["screenshot"] = {"path": None, "status": "not_captured"}
 
     _write_json(output_path, payload)
     return {
@@ -221,7 +235,7 @@ def _capture_case_html_screenshots(
 
     output: list[dict[str, str | None]] = []
     for item in cases:
-        screenshot_file = screenshot_dir / f"{item['case_id'].lower().replace('-', '_')}.png"
+        screenshot_file = (screenshot_dir / f"{item['case_id'].lower().replace('-', '_')}.png").resolve()
         rendered = _render_case_html(item)
         with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w", encoding="utf-8") as fp:
             fp.write(rendered)
@@ -237,8 +251,8 @@ def _capture_case_html_screenshots(
             html_path.as_uri(),
         ]
         try:
-            proc = subprocess.run(args, check=False, capture_output=True, text=True)
-            if proc.returncode != 0:
+            proc = subprocess.run(args, check=False, capture_output=False)
+            if proc.returncode != 0 or not screenshot_file.exists():
                 output.append({"case_id": item["case_id"], "path": None, "status": "failed"})
             else:
                 output.append({"case_id": item["case_id"], "path": str(screenshot_file), "status": "captured"})

@@ -91,3 +91,9 @@ This ledger is the current TODO source. The long-form roadmap is
 |---|---|---|---|
 | VERIFY-001 | DONE | End-to-end command and platform verification | In the current environment: `make` fallback works; `run.ps1 load`/`run.ps1 verify` are green; `kg` + `load` + API health/query smoke pass with `PYTHONPATH=src`; reproducibility evidence is recorded in progress log. |
 | VERIFY-002 | DONE | Strengthen quality gate and parser/domain-range consistency | Re-run `test_graph_build` and ingestion tests to ensure schema validation reports zero relation/domain-range violations and quality_gate `passed` is true with deterministic outputs. |
+
+## Phase 8b - Demo artifact hardening
+
+| ID | Status | Task | Acceptance criteria |
+|---|---|---|---|
+| DEMO-002 | DONE | Ensure demo screenshot capture persists files | `demo` runs with screenshot enabled writes `docs/screenshots/demo_001.png` … `docs/screenshots/demo_005.png` and report metadata matches generated artifacts. |

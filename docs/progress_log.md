@@ -1411,3 +1411,40 @@ Blockers:
 Next:
 
 - `BLOCKED` 标记截图工件：若需最终交付展示，请切换到支持中文控制台编码的环境，重新运行 demo 截图链路并回填实际图片文件。
+## 2026-06-26 - Demo screenshot persistence fix
+
+Task:
+
+- 修复 `cli demo` 截图工件“返回成功但未落盘”的缺陷，补齐本地复核并消除解码噪音。
+
+Commands run:
+
+- `$env:PYTHONPATH='src'; python -m py_compile src/diabetes_mmkgqa_starter/demo.py`
+- `$env:PYTHONPATH='src'; python -m pytest tests/test_demo.py -q`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json --demo-screenshot-dir docs/screenshots`
+- `foreach($i in 1..5){ $p="docs\\screenshots\\demo_{0:d3}.png" -f $i; Write-Output "$p $(Test-Path $p)" }`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli verify --backend portable`
+- `$env:PYTHONPATH='src'; python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json --output docs/report_inputs.md`
+
+Result:
+
+- `demo.py` 截图函数改为绝对路径（`screenshot_file.resolve()`）并关闭文本输出解码采集（`capture_output=False`）。
+- 截图成功后校验文件存在性，避免误标记 `captured`。
+- `tests/test_demo.py` 通过（2 passed）。
+- `cli demo` 成功返回 `Demo screenshots: 5`。
+- 真实文件存在：
+  - `docs\screenshots\demo_001.png`
+  - `docs\screenshots\demo_002.png`
+  - `docs\screenshots\demo_003.png`
+  - `docs\screenshots\demo_004.png`
+  - `docs\screenshots\demo_005.png`
+- `cli verify --backend portable` 返回 `verify passed`。
+- `docs/report_inputs.md` 已按当前 `stats.json` 重新写入。
+
+Blockers:
+
+- 无新增阻塞；截图链路在当前环境已恢复可写。
+
+Next:
+
+- 继续 `Phase 9` 打包前的清单核对（`deliverables` 与报告截图索引一致性）。
