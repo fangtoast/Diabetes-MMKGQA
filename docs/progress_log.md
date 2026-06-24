@@ -1113,3 +1113,38 @@ Result:
 Current status:
 
 - `UI-002` 标记为 DONE，等待 `UI-003` 进行截图与响应式可视化验证。
+## 2026-06-25 - Phase 7 UI Gate (UI-003)
+
+Task:
+
+- Execute frontend visual QA for screenshot + responsive validation.
+
+Commands run:
+
+- `$env:PYTHONPATH='src'; Start-Process -FilePath 'python' -ArgumentList '-m','uvicorn','diabetes_mmkgqa_starter.api.app:app','--host','127.0.0.1','--port','8000'`
+- `Invoke-WebRequest -Uri http://127.0.0.1:8000/health -UseBasicParsing`
+- `& 'C:/Program Files/Google/Chrome/Application/chrome.exe' --headless --disable-gpu --hide-scrollbars --window-size=1366,900 --screenshot='D:/project/diabetes_mmkgqa_starter/artifacts/screenshots/ui-desktop.png' http://127.0.0.1:8000/ui`
+- `& 'C:/Program Files/Google/Chrome/Application/chrome.exe' --headless --disable-gpu --hide-scrollbars --window-size=390,844 --screenshot='D:/project/diabetes_mmkgqa_starter/artifacts/screenshots/ui-mobile.png' http://127.0.0.1:8000/ui`
+- `Invoke-WebRequest -Uri http://127.0.0.1:8000/ui -UseBasicParsing`
+- `Invoke-WebRequest -Uri http://127.0.0.1:8000/static/app.js -UseBasicParsing`
+- `Invoke-WebRequest -Uri http://127.0.0.1:8000/static/styles.css -UseBasicParsing`
+- `python -m pytest tests/test_api_endpoints.py -q`
+
+Results:
+
+- `GET /health` returns `status=blocked` and explicit startup error: missing `data/processed/nodes.csv, edges.csv`.
+- `GET /ui`, `GET /static/app.js`, and `GET /static/styles.css` all return HTTP 200.
+- Frontend screenshots created:
+  - `artifacts/screenshots/ui-desktop.png`.
+  - `artifacts/screenshots/ui-mobile.png`.
+- `tests/test_api_endpoints.py` passes: `5 passed`.
+
+Decision:
+
+- UI visual checks and responsive rendering screenshot pass.
+- `UI-003` marked `DONE` in `TASKS.md`.
+- Remaining functional blocker for full-flow QA interactions: processed KG backend artifacts are not generated in repo yet.
+
+Next:
+
+- Continue `DEMO-001` planning and/or generate required `data/processed` artifacts before re-running end-to-end runtime interaction screenshots.
