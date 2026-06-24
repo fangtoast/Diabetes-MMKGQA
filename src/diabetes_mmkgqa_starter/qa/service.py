@@ -9,6 +9,7 @@ import re
 
 from diabetes_mmkgqa_starter.db import PortableGraphBackend
 from diabetes_mmkgqa_starter.qa.intent_router import IntentMatch, IntentRouter
+from diabetes_mmkgqa_starter.qa.query_templates import build_subgraph_query
 
 
 KG_VERSION_FALLBACK = "0.2.0"
@@ -137,7 +138,12 @@ class QAService:
         entity = candidates[0]
         entity_id = str(entity["node_id"])
         graph = self.backend.query_subgraph(entity_id, max_hops=self.router.fallback_max_hops)
-        rows = self._collect_answers(intent_match, entity_id, graph["edges"])
+        query_template = build_subgraph_query(
+            intent_match=intent_match,
+            node_id=entity_id,
+            max_hops=self.router.fallback_max_hops,
+        )
+        rows = self._collect_answers(intent_match, entity_id, graph["edges"], query_template.allowed_relations)
         images = self._collect_images(intent_match, entity)
         evidence_ids = sorted({str(row.get("evidence_id", "")) for row in rows if row.get("evidence_id", "")})
         source_ids = sorted({str(row.get("source_id", "")) for row in rows if row.get("source_id", "")})
@@ -248,9 +254,15 @@ class QAService:
                 candidates.append(token)
         return self._dedup_non_empty(candidates)
 
-    def _collect_answers(self, intent_match: IntentMatch, center_node_id: str, edges: list[dict]) -> list[dict]:
+    def _collect_answers(
+        self,
+        intent_match: IntentMatch,
+        center_node_id: str,
+        edges: list[dict],
+        allowed_relations: tuple[str, ...],
+    ) -> list[dict]:
         rows: list[dict] = []
-        allowed = set(intent_match.intent.relations)
+        allowed = set(allowed_relations)
         for row in edges:
             relation = str(row.get("relation", ""))
             if relation not in allowed and allowed:

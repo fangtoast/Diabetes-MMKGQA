@@ -924,3 +924,41 @@ Known blockers:
 Next:
 
 - `QA-002`（read-only parameterized safety query templates）。
+## 2026-06-25 - Phase 6 QA Gate (QA-002)
+
+Task:
+
+- Implement read-only parameterized query template library and wire QA service to use it for subgraph filtering.
+
+Commands run:
+
+- `python -m py_compile src/diabetes_mmkgqa_starter/qa/query_templates.py src/diabetes_mmkgqa_starter/qa/service.py src/diabetes_mmkgqa_starter/qa/__init__.py tests/test_query_templates.py`
+- `python -m pytest tests/test_qa_service.py tests/test_query_templates.py -q`
+
+Results:
+
+- Added `src/diabetes_mmkgqa_starter/qa/query_templates.py` with:
+  - `QueryTemplate` data structure.
+  - `QAQueryTemplateError`.
+  - `build_subgraph_query` that generates deterministic, read-only, parameterized Cypher-like template payloads (`$node_id`, `$relations`, `$max_hops`).
+  - `validate_query_payload` guard for read-only and parameter safety.
+- Exported query-template APIs from `src/diabetes_mmkgqa_starter/qa/__init__.py`.
+- Updated `src/diabetes_mmkgqa_starter/qa/service.py` to use template relations for deterministic answer extraction path.
+- Added `tests/test_query_templates.py`:
+  - parameters/read-only checks,
+  - invalid node-id rejection,
+  - no raw user-text embedding in generated query.
+- Result: `8 passed`.
+
+Current status:
+
+- `QA-002` marked DONE in `TASKS.md`.
+
+Known blockers:
+
+- QA response composer still needs enhancement for stricter evidence/source/metadata guarantees (QA-003).
+- API/UI stages remain TODO.
+
+Next:
+
+- Continue `QA-003`（Answer composer and response contract guarantees）。
