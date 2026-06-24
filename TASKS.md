@@ -84,3 +84,9 @@ This ledger is the current TODO source. The long-form roadmap is
 | DEMO-001 | DONE | Fixed reproducible cases | 3-5 cases generate JSON outputs and screenshots when available |
 | DOC-001 | DONE | Final README and report inputs | Counts come from generated stats; cases and commands are documented |
 | PKG-001 | DONE | Final packaging | Deliverables exclude unauthorized raw data and clean-room reproduction is documented |
+
+## Phase 9 - Verification and environment alignment
+
+| ID | Status | Task | Acceptance criteria |
+|---|---|---|---|
+| VERIFY-001 | DONE | End-to-end command and platform verification | In the current environment: `make` fallback works; `run.ps1 load`/`run.ps1 verify` are green; `kg` + `load` + API health/query smoke pass with `PYTHONPATH=src`; reproducibility evidence is recorded in progress log. |

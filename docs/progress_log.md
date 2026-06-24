@@ -1299,3 +1299,39 @@ Blockers:
 Next:
 
 - 建议继续补齐 `Makefile` 的 `verify` 命令前置工具检查与报错文案说明，并在有 `make` 的环境里回归一次。
+## 2026-06-26 - Verification and environment alignment (VERIFY-001)
+
+Task:
+
+- 在当前 Windows 环境完成一轮端到端可执行验证：
+  - 构建管线 `kg`（带 `PYTHONPATH=src`）
+  - 可复现加载 `load`
+  - run.ps1 fallback 链路
+  - API 平台健康与查询 smoke
+
+Commands run:
+
+- `$env:PYTHONPATH='D:/project/diabetes_mmkgqa_starter/src'; python -m diabetes_mmkgqa_starter.cli kg --repo-root . --output-dir data/processed`
+- `./scripts/run.ps1 load`
+- `python -m pytest tests/test_api_endpoints.py -q`
+- `$env:PYTHONPATH='D:\\project\\diabetes_mmkgqa_starter\\src'; python -m diabetes_mmkgqa_starter.cli verify`
+- `$env:PYTHONPATH='D:\\project\\diabetes_mmkgqa_starter\\src'; python -m diabetes_mmkgqa_starter.cli kg --repo-root . --output-dir data/processed`（重复运行，校验可复现）
+- `python -c "from fastapi.testclient import TestClient; from diabetes_mmkgqa_starter.api.app import app; c=TestClient(app); print(c.get('/health').status_code, c.get('/health').json()['status']); print(c.post('/qa', json={"question":"糖尿病常见症状有哪些？", "max_rows": 5}).status_code)"`（带 `PYTHONPATH=src`）
+
+Result:
+
+- `kg` 在 `PYTHONPATH=src` 下通过；复跑两次 `nodes.csv` MD5 一致（`9fbc42a9fad9a2dc3f49ca05d44c339a`），确认构建可重复。
+- `./scripts/run.ps1 load` 成功，backend=portable，返回 health OK。
+- `run.ps1 verify` 成功：测试套件与可复现 portable load 均通过。
+- API 测试通过（`5` 项 endpoint 测试）。
+- `cli verify` 成功返回 `[cli] verify passed`。
+- FastAPI `health` 接口返回可用状态；`/qa` 接口可返回带安全声明的响应。
+
+Blockers:
+
+- `make` 命令在当前环境仍然不存在；因此 `make ...` 命令链条无法直接调用，平台通过 `scripts/run.ps1` fallback 继续运行。
+- 直接执行 `python -m diabetes_mmkgqa_starter.cli ...` 时仍依赖 `PYTHONPATH=src`（可由 run/verify 命令和 make 目标自动处理）。
+
+Next:
+
+- 保持 `VERIFY-001` 记录状态为 DONE，后续新增环境中复测 `make` 与 `make verify`。
