@@ -145,7 +145,19 @@ switch ($Command) {
 
     'data' {
         Invoke-MakeOrFallback -Target 'data' -FallbackMessage 'make data unavailable; placeholder for source validation and root/interim setup.' -Fallback {
-            Write-Placeholder 'Placeholder: validate source manifest and begin data validation pipeline.'
+            if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+                Write-Error 'python is not available; cannot run MedMNIST data workflow.'
+                exit 1
+            }
+            $args = @('--dataset', 'all', '--dry-run')
+            if ($Rest -and $Rest.Count -gt 0) {
+                $args = $Rest
+            }
+            & python scripts/fetch_medmnist.py @args
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "data workflow failed with code $LASTEXITCODE"
+                exit $LASTEXITCODE
+            }
         }
     }
 

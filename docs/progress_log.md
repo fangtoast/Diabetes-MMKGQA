@@ -431,3 +431,39 @@ Blockers:
 Next:
 
 - `DATA-002`（注册与获取 MedMNIST roots，下载/校验/许可证记录或明确阻塞策略）。
+## 2026-06-24 - Phase 2 Data Gate (DATA-002)
+
+Task:
+
+- Register and define reproducible acquisition path for RetinaMNIST + PneumoniaMNIST roots (official MedMNIST source, checksum/size/license).
+- Integrate lightweight fetch/checker into `scripts/run.ps1 data`.
+
+Commands run:
+
+- `python scripts/fetch_medmnist.py --dataset all --dry-run`
+- `python -m pytest tests/test_data_sources.py`
+- `./scripts/run.ps1 data`
+- `Get-Content data/source_manifest.yaml` check and checksum updates
+
+Result:
+
+- Added `scripts/fetch_medmnist.py` with:
+  - manifest-aware source resolution
+  - official Zenodo metadata query (fallback catalog)
+  - dry-run/status reporting
+  - optional download + md5 verify
+- Added `docs/medmnist_acquisition.md` with acquisition commands, license note, and fallback policy.
+- Updated `data/source_manifest.yaml` checksums:
+  - `retinamnist`: `md5:eae7e3b6f3fcbda4ae613ebdcbe35348`
+  - `pneumoniamnist`: `md5:d6a3c71de1b945ea11211b03746c1fe1`
+- Updated `scripts/run.ps1` so `data` command invokes `fetch_medmnist.py` in plan mode by default.
+- Added `tests/test_data_sources.py` with manifest checksum contract + script dry-run smoke tests.
+- `TASKS.md`: `DATA-002` set to `DONE`.
+
+Blockers:
+
+- Files are not downloaded in this commit yet; `run.ps1 data` and script default dry-run mode keep this step safe for environments with limited resources.
+
+Next:
+
+- `DATA-003`（DiaKG 授权下载/申请说明 + fixture）

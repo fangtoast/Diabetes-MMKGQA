@@ -24,7 +24,7 @@ sources:
     title: MedMNIST RetinaMNIST+
     root_file: data/raw/retinamnist/retinamnist_224.npz
     acquisition: Download from official MedMNIST distribution (or mirror) when network access is available.
-    checksum: VERIFY_AGAINST_OFFICIAL_METADATA
+    checksum: md5:eae7e3b6f3fcbda4ae613ebdcbe35348
     license_or_terms: CC BY 4.0 (MedMNIST); include the original dataset source citation in project docs.
     extractor: src/ingestion/retinamnist_parser.py
     expected_content: train/val/test images and 5-level diabetic-retinopathy labels
@@ -34,7 +34,7 @@ sources:
     title: MedMNIST PneumoniaMNIST
     root_file: data/raw/pneumoniamnist/pneumoniamnist_224.npz
     acquisition: Download from official MedMNIST distribution (or mirror) when network access is available.
-    checksum: VERIFY_AGAINST_OFFICIAL_METADATA
+    checksum: md5:d6a3c71de1b945ea11211b03746c1fe1
     license_or_terms: CC BY 4.0 (MedMNIST); include dataset source citation in project docs.
     extractor: src/ingestion/pneumoniamnist_parser.py
     expected_content: train/val/test chest X-ray images and pneumonia labels
