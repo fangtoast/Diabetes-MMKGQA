@@ -43,7 +43,7 @@ This ledger is the current TODO source. The long-form roadmap is
 | INGEST-002 | DONE | Implement DiaKG parser | Fixture and full-file paths preserve evidence IDs and raw relations |
 | INGEST-003 | DONE | Implement RetinaMNIST parser | Images and metadata export with stable IDs, split, grade, dataset links |
 | INGEST-004 | DONE | Implement PneumoniaMNIST parser | Chest X-ray metadata and disease-label links export deterministically |
-| NORM-001 | TODO | Implement aliases and normalization | No cross-type fuzzy merge; deterministic canonical IDs |
+| NORM-001 | DONE | Implement aliases and normalization | Alias loader parses manual aliases with validation, canonicalizes entities deterministically with same-type safety, and passes normalization/export repeatability tests |
 
 ## Phase 4 - Graph build and quality
 

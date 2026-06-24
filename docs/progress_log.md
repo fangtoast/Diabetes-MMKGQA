@@ -643,3 +643,53 @@ Blockers:
 
 Next:
 - `NORM-001`（实现别名加载与实体规范化）。
+
+## 2026-06-25 - Phase 3 Parser Gate (NORM-001)
+
+Task:
+- Implement aliases loader and deterministic alias-based entity normalization.
+
+Commands run:
+- `Get-Content` review of manifest/parser and manual alias fixture.
+- `tests/test_normalization_alias.py` added (determinism, no cross-type merge, export repeatability).
+- `TASKS.md` updated: `NORM-001` set to DONE
+
+Result:
+- Added `src/diabetes_mmkgqa_starter/normalization/alias_loader.py` with:
+  - Manifest-aware loading from `manual_aliases`.
+  - CSV parsing with required schema checks and deduplication.
+  - Strict same-type alias map construction (`(node_type, alias)` keys).
+- Added `src/diabetes_mmkgqa_starter/normalization/__init__.py`.
+- Added `tests/test_normalization_alias.py` with:
+  - Deterministic `parse_alias_rows/build_alias_index`.
+- Same-type canonicalization test with overlapping alias text across node types.
+- Normalized record handling and repeatable output export tests.
+
+Blockers:
+- No immediate blocker; alias normalization currently validates strict exact-match canonicalization rules for this stage.
+
+Next:
+- `GRAPH-001`（构建可复现的图谱导出文件与主数据拼装）。
+
+## 2026-06-25 - Phase 3 Parser Gate (NORM-001 fix/recheck)
+
+Task:
+- 修正 alias 标准化与导出行为，补齐可复现导出字段并完成回归验证。
+
+Commands run:
+- `python -m pytest tests/test_normalization_alias.py`
+- `python -m pytest`
+
+Result:
+- 调整 `src/diabetes_mmkgqa_starter/normalization/alias_loader.py`：
+  - 修复 `normalize_entity_records` 的 `canonicalized_from_alias` 标记语义，使其仅在原始 `canonical_name` 缺失时标记 `1`，同时保留别名触发的标准化结果。
+  - 导出索引补齐 `stable_node_id` 依赖，确保 `alias_index.csv` 中包含确定的 `target_node_id`。
+- 验证结果：
+  - `tests/test_normalization_alias.py`：3 passed
+  - 全量测试：19 passed
+
+Blockers:
+- 无新增阻塞；保留图谱构建任务 `GRAPH-001` 作为下一步。
+
+Next:
+- `GRAPH-001`（可复现图谱主文件拼装与质量检查）。
