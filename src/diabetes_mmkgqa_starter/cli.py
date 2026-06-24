@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from argparse import ArgumentParser
 from pathlib import Path
+import os
+import subprocess
 import sys
 from typing import Sequence
 
 from . import __version__
 from . import graph_builder
 from . import demo
-
-
 AVAILABLE_COMMANDS = (
     "help",
     "bootstrap",
@@ -179,6 +179,46 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"[cli] Generated {result['case_count']} demo cases -> {result['output_path']}")
             print(f"[cli] Demo screenshots: {result['screenshot_count']}")
             return 0
+        if command == "verify":
+            env = os.environ.copy()
+            repo_root = Path(args.repo_root)
+            env["PYTHONPATH"] = str((repo_root / "src").resolve())
+
+            test_result = subprocess.run(
+                [sys.executable, "-m", "pytest", "tests", "-q"],
+                cwd=str(repo_root),
+                env=env,
+                check=False,
+            )
+            if test_result.returncode != 0:
+                print("[cli] verify test suite failed")
+                return test_result.returncode
+
+            load_result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "diabetes_mmkgqa_starter.cli",
+                    "load",
+                    "--backend",
+                    "portable",
+                    "--repo-root",
+                    str(repo_root),
+                    "--output-dir",
+                    str((repo_root / "data" / "processed").resolve()),
+                    "--ontology-path",
+                    str((repo_root / "configs" / "ontology.yaml").resolve()),
+                ],
+                env=env,
+                check=False,
+            )
+            if load_result.returncode != 0:
+                print("[cli] verify portable load check failed")
+                return load_result.returncode
+
+            print("[cli] verify passed")
+            return 0
+
         if command == "package":
             from . import package_builder
 

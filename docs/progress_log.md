@@ -1238,3 +1238,64 @@ Blockers:
 Next:
 
 - 完成验收检查：确认 `deliverables/diabetes_mmkgqa_deliverables.zip` 与 `deliverables/package-manifest.json` 内容与路径规范。
+## 2026-06-25 - Verification recovery and command-path alignment
+
+Task:
+
+- 修复测试采集与命令执行阻塞，补齐 `test`/`verify` 的本地可复现路径（不依赖 `deliverables/_package_staging`），并补齐 `cli verify` 的 smoke 检查。
+
+Commands run:
+
+- `python -m pytest tests -q`
+- `$env:PYTHONPATH='D:\project\diabetes_mmkgqa_starter\src'; python -m diabetes_mmkgqa_starter.cli verify`
+- `./scripts/run.ps1 verify`
+- `$env:PYTHONPATH='D:\project\diabetes_mmkgqa_starter\src'; python -m diabetes_mmkgqa_starter.cli load --backend portable --output-dir data/processed --ontology-path configs/ontology.yaml`
+
+Results:
+
+- `python -m pytest tests -q` 全量通过（已应用 `pytest` 限定为 `testpaths = tests`，避免 `deliverables/_package_staging/platform/tests` 与 `tests` 重名冲突）。
+- `scripts/run.ps1 verify` 输出通过，依次完成：
+  - 全量测试通过（45+ tests）；
+  - `cli load --backend portable` 健康检查通过。
+- `cli verify` 现在实现：
+  - 运行 `pytest tests -q`
+  - 运行 `cli load --backend portable`
+  - 二者均通过后返回 `[cli] verify passed`。
+- `PYTHONPATH` 与 `pytest.ini` 已补齐。
+
+Blockers:
+
+- `cli verify`/测试链条仍依赖 `src` 在运行时可达（本地执行建议保留 `PYTHONPATH=src` 或用 `scripts/run.ps1 verify`）。
+- `cli verify` 未写入 `TASKS.md` 状态位，当前 `TASKS.md` 已全部标记为 DONE，无新增阶段任务。
+
+Next:
+
+- 可继续同步任务账本中的“验收后确认”说明：是否为 `TASKS.md` 增补一条最终收官记录？
+## 2026-06-25 - Verification pipeline hardening and PowerShell path alignment
+
+Task:
+
+- 修复 `run.ps1 verify` 的语法阻塞并统一 `verify/test` 执行路径，使项目在无 `make`/`pytest` 全局安装时仍可回退跑通本地验收。
+
+Commands run:
+
+- `python -m py_compile src/diabetes_mmkgqa_starter/cli.py`
+- `python -m pytest tests -q`
+- `$env:PYTHONPATH='D:\project\diabetes_mmkgqa_starter\src'; python -m diabetes_mmkgqa_starter.cli verify`
+- `./scripts/run.ps1 verify`
+- `make verify`
+
+Results:
+
+- `cli.py` 语法与完整测试通过。
+- `cli verify` 成功执行：测试通过 + `cli load --backend portable` 健康检查通过，返回 `[cli] verify passed`。
+- `run.ps1 verify` 已成功执行，包含测试与可复现 portable load 检查。
+- `make verify` 在当前 Windows 环境不可用（`make` 命令不存在），已被 `run.ps1` 回退路径正确覆盖。
+
+Blockers:
+
+- `make` 工具缺失仍然阻断 `Makefile` 直接运行；当前按要求标记为 fallback 成功，不作为 DONE.
+
+Next:
+
+- 建议继续补齐 `Makefile` 的 `verify` 命令前置工具检查与报错文案说明，并在有 `make` 的环境里回归一次。

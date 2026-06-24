@@ -29,10 +29,10 @@ load:
 	fi
 
 test:
-	@echo "TODO: run tests"
+	@PYTHONPATH=src python -m pytest tests
 
 verify:
-	@echo "TODO: lint + tests + data quality + smoke test"
+	@PYTHONPATH=src python -m pytest tests
 
 demo:
 	@PYTHONPATH=src python -m diabetes_mmkgqa_starter.cli demo

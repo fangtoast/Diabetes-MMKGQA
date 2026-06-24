@@ -327,7 +327,7 @@ switch ($Command) {
     'test' {
         Invoke-MakeOrFallback -Target 'test' -FallbackMessage 'make test unavailable; falling back to pytest if installed.' -Fallback {
             if (Get-Command pytest -ErrorAction SilentlyContinue) {
-                pytest
+                pytest tests -q
             }
             else {
                 Write-Placeholder 'pytest not installed yet; bootstrap should install test dependencies first.'
@@ -339,7 +339,22 @@ switch ($Command) {
         Invoke-MakeOrFallback -Target 'verify' -FallbackMessage 'make verify unavailable; fallback smoke checks if possible.' -Fallback {
             if (Get-Command python -ErrorAction SilentlyContinue) {
                 Write-Placeholder 'Running lightweight verification smoke checks (scripted path).'
-                python --version
+                $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+                try {
+                    python -m pytest tests -q
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Error "verify test step failed with code $LASTEXITCODE"
+                        exit $LASTEXITCODE
+                    }
+                    python -m diabetes_mmkgqa_starter.cli load --backend portable --output-dir 'data/processed'
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Error "portable load step failed with code $LASTEXITCODE"
+                        exit $LASTEXITCODE
+                    }
+                }
+                finally {
+                    $env:PYTHONPATH = $null
+                }
             }
             else {
                 Write-Placeholder 'python not available for verification smoke check.'
