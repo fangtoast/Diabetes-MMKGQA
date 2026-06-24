@@ -1045,3 +1045,35 @@ Result:
 Notes:
 
 - 该轮验证确认新增 `make up`/`run.ps1 up` 接口与现有 QA/图谱链路无回归。
+## 2026-06-26 - Phase 7 UI Gate (UI-001)
+
+Task:
+
+- 完成 Product Design Brief，明确前端首屏、交互需求与 API 契约映射。
+
+Commands run:
+
+- `Get-Content` 读取了 `AGENTS.md`, `docs/project_plan.md`, `TASKS.md`, `docs/progress_log.md`, `docs/architecture.md`, `configs/ontology.yaml`, `configs/intents.yaml`, `data/source_manifest.yaml`。
+- `Get-Content` 读取前端/交付上下文文件（`README.md`, `docs/codex_target_prompt.md`, `docs/cases/case_template.md`）。
+- `New-Item`/`Set-Content`（通过补丁）新增 `docs/ui_design_brief.md`。
+- `TASKS.md` 更新 `UI-001` 状态。
+
+Result:
+
+- 新增 `docs/ui_design_brief.md`，内容包括：
+  - 目标用户与使用场景
+  - 第一屏必须是 QA 工作台的导航与信息架构
+  - 核心交互故事（QA / Graph / 图像检索 / Stats / Demo）
+  - API 契约映射（与已完成的 `/health` `/qa` `/entities/search` `/graph/subgraph` `/images/search` `/stats`）
+  - 安全声明与课程演示边界
+  - 响应式与可读性要求
+  - UI-002 的可落地组件清单
+- `UI-001` 在 `TASKS.md` 标记为 DONE。
+
+Blockers:
+
+- 无。当前为设计文档任务。
+
+Next:
+
+- 开始 `UI-002`：使用 Build Web Apps 工作流实现前端骨架，使用 API 连接 QA、图谱、图像、统计和健康状态。

@@ -73,7 +73,7 @@ This ledger is the current TODO source. The long-form roadmap is
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
 | API-001 | DONE | FastAPI endpoints | Contract tests pass for health, QA, entity search, subgraph, images, and stats |
-| UI-001 | TODO | Product design brief | Product Design workflow captures target users, screens, safety language, and interaction needs |
+| UI-001 | DONE | Product design brief | Product Design workflow captures target users, screens, safety language, and interaction needs |
 | UI-002 | TODO | Build Web Apps frontend | Frontend is built with the Build Web Apps workflow and exposes QA, graph, image, stats, demo screens |
 | UI-003 | TODO | Frontend visual QA | Rendered screenshots/responsive checks pass or are marked BLOCKED with exact reason |
 
