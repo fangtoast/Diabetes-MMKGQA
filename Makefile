@@ -10,7 +10,7 @@ data:
 	@echo "TODO: validate source manifest and build interim data"
 
 kg:
-	@echo "TODO: build portable KG and stats"
+	@python -m diabetes_mmkgqa_starter.graph_builder
 
 up:
 	@echo "TODO: docker compose up -d"

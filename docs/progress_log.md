@@ -693,3 +693,66 @@ Blockers:
 
 Next:
 - `GRAPH-001`（可复现图谱主文件拼装与质量检查）。
+
+## 2026-06-25 - Phase 4 Graph Build Gate (GRAPH-001)
+
+Task:
+
+- 完成图谱可复现导出管线（`GRAPH-001`）并联动命令入口。
+
+Commands run:
+
+- `python -m pytest tests/test_graph_build.py`
+- `python -m pytest tests/test_graph_build.py tests/test_cli_smoke.py`
+- `python -m pytest tests/test_graph_build.py tests/test_cli_smoke.py`（复测后通过）
+
+Result:
+
+- 修复 `src/diabetes_mmkgqa_starter/graph_builder.py` 中 `set` 在 JSON 序列化导致的不可复现/异常：
+  - 增加 `_to_jsonable` 并在 JSON 输出前归一化 `set`/`tuple`。
+  - 修复边界字段缺失：将 `relation_violations` 别名补齐并对齐 `stats`/`schema` 的键位约定。
+  - 移除 `stats.json` 与 `schema.json` 中不可重复的时间戳字段，保证重复构建同输入下完全一致。
+  - 优化别名标准化时节点 ID 重映射，提升边头尾节点引用稳定性。
+- 将 `cli.py` `kg` 命令对接 `graph_builder.build_graph_outputs`，支持 `--skip-*` 参数（diakg/retina/pneumonia）。
+- 将 `Makefile` 的 `kg` 目标改为真实执行 `python -m diabetes_mmkgqa_starter.graph_builder`。
+- 将 `scripts/run.ps1 kg` 回退逻辑改为实际调用 `python -m diabetes_mmkgqa_starter.graph_builder`。
+- 将 `TASKS.md` 的 `GRAPH-001` 标记为 `DONE`。
+- 验证结果：
+  - `tests/test_graph_build.py` 2 项 + `tests/test_cli_smoke.py` 3 项通过（共 5 项）。
+
+Blockers:
+
+- 目前图谱质量检查 `GRAPH-002` 仍未完成（自检清单未落地）。
+
+Next:
+
+- `GRAPH-002`（域-范围、端点缺失、自环、溯源与图片路径校验）。
+- `GRAPH-003`（层级统计产出对齐）。
+
+## 2026-06-25 - GRAPH-001 verification follow-up
+
+Task:
+
+- 修复运行器联动后的执行兼容性与最终一致性回归。
+
+Commands run:
+
+- `python -m pytest`（全量测试）
+- `make verify`
+- `./scripts/run.ps1 test`
+- `./scripts/run.ps1 kg --skip-retina --skip-pneumonia --output-dir temp_run_output`
+
+Result:
+
+- 全量测试全部通过：21 passed。
+- `make verify` 在当前环境中失败：`make` 命令缺失（已按平台要求记录为 BLOCKED）。
+- `scripts/run.ps1 test` 走 fallback 路径成功执行 pytest（21 passed）。
+- `scripts/run.ps1 kg` 在设置 `PYTHONPATH` 后成功构建到 `temp_run_output`（随后清理该目录）。
+
+Blockers:
+
+- `make` 不可用阻止 `make verify` 常规路径，但 `scripts/run.ps1` 已提供可复现回退路径。
+
+Next:
+
+- 继续推进 `GRAPH-002` 的质量校验清单与验证测试。

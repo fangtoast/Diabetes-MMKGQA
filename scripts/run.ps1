@@ -170,7 +170,26 @@ switch ($Command) {
 
     'kg' {
         Invoke-MakeOrFallback -Target 'kg' -FallbackMessage 'make kg unavailable; placeholder for graph build pipeline.' -Fallback {
-            Write-Placeholder 'Graph build placeholder: will generate nodes/edges/triples/evidence/images/stats once parsers are implemented.'
+            if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+                Write-Error 'python is not available; cannot run graph build.'
+                exit 1
+            }
+            $args = @()
+            if ($Rest -and $Rest.Count -gt 0) {
+                $args = $Rest
+            }
+            $prevPythonPath = $env:PYTHONPATH
+            try {
+                $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+                & python -m diabetes_mmkgqa_starter.graph_builder @args
+            }
+            finally {
+                $env:PYTHONPATH = $prevPythonPath
+            }
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "Graph build failed with code $LASTEXITCODE"
+                exit $LASTEXITCODE
+            }
         }
     }
 
