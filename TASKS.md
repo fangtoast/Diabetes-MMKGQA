@@ -64,7 +64,7 @@ This ledger is the current TODO source. The long-form roadmap is
 
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
-| QA-001 | TODO | Entity linker and intent router | A/B/C golden paraphrase tests pass |
+| QA-001 | DONE | Entity linker and intent router | A/B/C golden paraphrase tests pass |
 | QA-002 | TODO | Safe query template library | Queries are read-only and parameterized; raw user text is never concatenated |
 | QA-003 | TODO | Answer composer | Answers include evidence/source IDs, KG version, images when relevant, and safety notice |
 

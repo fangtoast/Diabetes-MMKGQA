@@ -895,3 +895,32 @@ Next:
 
 - Run `kg` or `data/processed` generation and then re-run `./scripts/run.ps1 load` to confirm one-command portability path.
 - Begin `QA-001` with stable entity search and intent routing on top of `PortableGraphBackend`.
+## 2026-06-25 - Phase 7 QA Gate (QA-001)
+
+Task:
+
+- Implement entity linking and intent router outputs in QA service layer for stable A/B/C question answering behavior.
+
+Commands run:
+
+- `python -m pytest tests/test_qa_service.py -q`
+- `python -m py_compile src/diabetes_mmkgqa_starter/qa/service.py`
+
+Results:
+
+- Rewrote `src/diabetes_mmkgqa_starter/qa/service.py` to restore missing helper methods and deterministic, non-LLM QA flow.
+- Added robust query extraction from natural-language questions (trigger/stopword removal, candidate tokens), entity linking, ambiguity handling, image-aware retrieval, and answer formatting.
+- Updated safety notice wording to include "课程演示、非临床诊断".
+- `tests/test_qa_service.py` now passes with `4 passed`.
+
+Current status:
+
+- `QA-001` marked DONE in `TASKS.md`.
+
+Known blockers:
+
+- QA downstream APIs/UI are not yet connected in this stage.
+
+Next:
+
+- `QA-002`（read-only parameterized safety query templates）。
