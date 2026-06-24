@@ -220,3 +220,35 @@ Next:
 
 - Next task: `BOOT-001`（初始化 Git）或 `BOOT-002`（运行时脚手架），按实际确认顺序推进。（当前环境已具备 Git；以 `BOOT-001`/`BOOT-002` 实际任务顺序为准）
 
+## 2026-06-24 - Phase 1 Bootstrap Gate (BOOT-001)
+
+Task:
+
+- Verify and finalize Git bootstrap baseline.
+
+Commands run:
+
+- `git rev-parse --is-inside-work-tree`
+- `git status --short`
+- `git log --oneline -n 8`
+- `Get-Content -Path .gitignore`
+
+Result:
+
+- `.git` exists: `true`.
+- Working tree is clean.
+- Git history shows latest commit `9995b53` includes baseline documentation and contract updates.
+- `.gitignore` documents virtual envs、缓存目录、受保护数据和可生成目录（如 `data/raw/**/*.npz/json`、`data/interim/`、`data/processed/`、`deliverables/`）。
+
+Task status change:
+
+- `BOOT-001` marked `DONE`.
+
+Blockers:
+
+- None for this bootstrap gate.
+
+Next:
+
+- `BOOT-002`（Python 项目元数据与依赖锁定）。
+
