@@ -1492,3 +1492,38 @@ Blockers:
 Next:
 
 - 收官提交：将收口项 `PKG-VERIFY-002` 标记为 DONE，并在一次最小验收命令后提交。
+
+## 2026-06-26 - Completion audit and final verification sweep (CLOSE-001)
+
+Task:
+
+- 按项目目标做一次最终验收 sweep：任务状态收口、图谱构建链路、API/QA、demo 与交付清单闭环核验。
+
+Commands run:
+
+- `python -m pytest tests -q`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli verify --backend portable`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli load --backend portable --output-dir data/processed --ontology-path configs/ontology.yaml`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli kg --repo-root . --output-dir data/processed`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli --repo-root . --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip package`
+- `$env:PYTHONPATH='src'; python -m pytest tests/test_api_endpoints.py tests/test_demo.py -q`
+- `python` 临时审计脚本（离线统计：`docs/report_inputs.md`、`docs/cases/demo_cases.json`、`deliverables/_package_staging/package/package-manifest.json`、`deliverables/diabetes_mmkgqa_deliverables.zip`）
+  - 校验：`data/processed` 产物目录与 demo 包含 5 条截图且不含 `manual_test_abs.png`、`data/raw` 泄漏。
+
+Result:
+
+- 全量测试通过（含 api/demo 相关用例）。
+- `cli verify --backend portable` 通过，报告 `Portable health ok` 且返回 `node_count=40`, `edge_count=28`。
+- `cli load --backend portable` 通过，`backend=portable`。
+- `kg` 构建可复现并输出 `data/processed` 全量文件。
+- `package` 输出 `[cli] Package status: READY, files=88`，`package-manifest.json` 与 zip 清单一致。
+- `api` 与 `demo` 相关测试通过（含静态前端路由与截图链路）。
+- `PKG-VERIFY-002` 后的 artifacts 完整性再次确认为通过，`manual_test_abs.png` 已清除。
+
+Blockers:
+
+- 无新增阻塞。
+
+Next:
+
+- 进入目标收官阶段：如需继续提高可观测性，可将完成验收清单外置为 `scripts/verify_project_completion.py` 并加入 `run.ps1 verify` 快捷路径。
