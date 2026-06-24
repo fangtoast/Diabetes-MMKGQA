@@ -116,6 +116,10 @@ class QAService:
 
         if len(candidates) > 1:
             ranked = [self._expose_candidate(row) for row in candidates]
+            evidence_ids: list[str] = []
+            source_ids: list[str] = []
+            for row in ranked:
+                source_ids.extend(self._split_values(str(row.get("source_ids", ""))))
             return {
                 "status": "clarification",
                 "question": question,
@@ -125,13 +129,14 @@ class QAService:
                 "answer": self._format_ambiguity_message(intent_match, ranked),
                 "rows": [],
                 "images": [],
-                "evidence_ids": [],
-                "source_ids": [],
+                "evidence_ids": sorted({id_ for id_ in evidence_ids if id_}),
+                "source_ids": sorted({id_ for id_ in source_ids if id_}),
                 "kg_version": self._infer_version(),
                 "safety_notice": SAFETY_NOTICE,
                 "metadata": {
                     "candidates": ranked,
                     "max_rows": self.router.fallback_max_rows,
+                    "candidate_count": len(ranked),
                 },
             }
 
@@ -145,8 +150,8 @@ class QAService:
         )
         rows = self._collect_answers(intent_match, entity_id, graph["edges"], query_template.allowed_relations)
         images = self._collect_images(intent_match, entity)
-        evidence_ids = sorted({str(row.get("evidence_id", "")) for row in rows if row.get("evidence_id", "")})
-        source_ids = sorted({str(row.get("source_id", "")) for row in rows if row.get("source_id", "")})
+        evidence_ids, source_ids = self._collect_metadata_ids(entity, rows)
+        kg_version = self._infer_version(rows, entity)
 
         if not rows and not images and intent_match.intent.relations:
             return {
@@ -163,9 +168,16 @@ class QAService:
                 "images": images,
                 "evidence_ids": evidence_ids,
                 "source_ids": source_ids,
-                "kg_version": self._infer_version(rows, entity),
+                "kg_version": kg_version,
                 "safety_notice": SAFETY_NOTICE,
-                "metadata": {"max_hops": self.router.fallback_max_hops},
+                "metadata": {
+                    "max_hops": self.router.fallback_max_hops,
+                    "query_template": {
+                        "name": query_template.name,
+                        "read_only": query_template.read_only,
+                        "max_hops": query_template.max_hops,
+                    },
+                },
             }
 
         return {
@@ -175,17 +187,24 @@ class QAService:
             "matched_trigger": intent_match.matched_trigger,
             "entity": self._expose_entity(entity),
             "answer": self._format_answer(entity, rows, images, intent_match),
-            "rows": rows,
-            "images": images,
-            "evidence_ids": evidence_ids,
-            "source_ids": source_ids,
-            "kg_version": self._infer_version(rows, entity),
-            "safety_notice": SAFETY_NOTICE,
-            "metadata": {
-                "max_hops": self.router.fallback_max_hops,
-                "nodes_in_subgraph": graph.get("node_count", 0),
-            },
-        }
+                "rows": rows,
+                "images": images,
+                "evidence_ids": evidence_ids,
+                "source_ids": source_ids,
+                "kg_version": kg_version,
+                "safety_notice": SAFETY_NOTICE,
+                "metadata": {
+                    "max_hops": self.router.fallback_max_hops,
+                    "nodes_in_subgraph": graph.get("node_count", 0),
+                    "relation_count": len(rows),
+                    "image_count": len(images),
+                    "query_template": {
+                        "name": query_template.name,
+                        "read_only": query_template.read_only,
+                        "max_hops": query_template.max_hops,
+                    },
+                },
+            }
 
     def _link_entity(self, question: str, intent_match: IntentMatch) -> list[dict]:
         query_candidates = self._candidate_search_queries(question, intent_match.matched_trigger)
@@ -300,7 +319,10 @@ class QAService:
         if not rows:
             if images:
                 return f"已找到 {entity.get('canonical_name', node_name)} 的相关影像候选（{len(images)} 张）。"
-            return f"未检索到 {entity.get('canonical_name', node_name)} 的回答条目。"
+            return (
+                f"未检索到 {entity.get('canonical_name', node_name)} 的回答条目。"
+                f"当前知识库范围内未发现可支持该意图的条目。"
+            )
 
         rendered = []
         for row in rows:
@@ -332,15 +354,38 @@ class QAService:
             "intent": intent,
             "matched_trigger": matched_trigger,
             "entity": None,
-            "answer": f"未在当前知识库找到可回答内容，原因：{reason}。",
+            "answer": f"未在当前知识库找到可回答内容，原因：{reason}。这是课程演示，非临床诊断用途。",
             "rows": [],
             "images": [],
             "evidence_ids": [],
             "source_ids": [],
             "kg_version": self._infer_version(),
             "safety_notice": SAFETY_NOTICE,
-            "metadata": metadata or {},
+            "metadata": metadata or {"query_supported": False},
         }
+
+    def _collect_metadata_ids(self, entity: dict, rows: list[dict]) -> tuple[list[str], list[str]]:
+        evidence_ids: set[str] = set()
+        source_ids: set[str] = set()
+
+        for row in rows:
+            evidence_ids.update(self._split_values(str(row.get("evidence_id", ""))))
+            source_ids.update(self._split_values(str(row.get("source_id", ""))))
+
+        source_ids.update(self._split_values(str(entity.get("source_ids", ""))))
+
+        return sorted(evidence_ids), sorted(source_ids)
+
+    @staticmethod
+    def _split_values(value: str) -> list[str]:
+        if not value:
+            return []
+        parts = []
+        for part in str(value).replace("|", ",").replace(";", ",").split(","):
+            item = part.strip()
+            if item:
+                parts.append(item)
+        return parts
 
     def _infer_version(self, rows: list[dict] | None = None, entity: dict | None = None) -> str:
         for row in rows or []:
@@ -379,6 +424,7 @@ class QAService:
             "canonical_name": str(entity.get("canonical_name", "")),
             "node_type": str(entity.get("node_type", "")),
             "knowledge_layer": str(entity.get("knowledge_layer", "")),
+            "source_ids": str(entity.get("source_ids", "")),
         }
 
     @staticmethod

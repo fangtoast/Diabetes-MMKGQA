@@ -962,3 +962,38 @@ Known blockers:
 Next:
 
 - Continue `QA-003`（Answer composer and response contract guarantees）。
+## 2026-06-25 - Phase 6 QA Gate (QA-003)
+
+Task:
+
+-完善答复组合器与返回契约，统一 evidence/source/kg_version/safety_notice 在成功/歧义/未命中三类场景中的回传。
+
+Commands run:
+
+- `python -m py_compile src/diabetes_mmkgqa_starter/qa/service.py tests/test_qa_service.py`
+- `python -m pytest tests/test_qa_service.py tests/test_query_templates.py -q`
+
+Results:
+
+- 扩展 `src/diabetes_mmkgqa_starter/qa/service.py` 的 answer composer 与响应构造：
+  - `_collect_metadata_ids`：从 rows 与实体来源聚合 `evidence_ids`、`source_ids`。
+  - 未命中分支返回统一的 `not_found` 消息并保留教育声明。
+  - 歧义分支返回包含候选 `source_ids` 与 `candidate_count`。
+  - 成功分支补充 `metadata` 中 `relation_count`、`image_count` 与 `query_template` 信息（read-only、max_hops）。
+  - `clarification` 与 `_expose_candidate` 的候选项返回 `source_ids`。
+- 更新 `tests/test_qa_service.py`：
+  - 校验安全提示语。
+  - 校验各场景下 `evidence_ids/source_ids/kg_version/safety_notice`.
+  - 新增未命中场景 contract 测试。
+
+Current status:
+
+- `QA-003` 标记为 DONE。
+
+Known blockers:
+
+- `API-001` 尚未开始。
+
+Next:
+
+- 继续 `API-001`（FastAPI 接口层），先实现 health/qa/search/subgraph/stats。

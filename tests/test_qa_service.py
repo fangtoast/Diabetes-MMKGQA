@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
@@ -277,6 +277,8 @@ def test_qa_service_a_layer_symptom_question_has_evidence_and_metadata(tmp_path:
     assert result["kg_version"] == "0.2.0"
     assert "课程演示、非临床诊断" in result["safety_notice"]
     assert len(result["rows"]) == 2
+    assert result["metadata"]["relation_count"] == 2
+    assert result["metadata"]["image_count"] == 0
 
 
 def test_qa_service_ambiguous_entity_returns_clarification(tmp_path: Path):
@@ -354,6 +356,9 @@ def test_qa_service_ambiguous_entity_returns_clarification(tmp_path: Path):
     assert result["status"] == "clarification"
     assert len(result["metadata"]["candidates"]) == 2
     assert result["metadata"]["candidates"][0]["canonical_name"] in {"diabetes", "diabetes type 2"}
+    assert "课程演示、非临床诊断" in result["safety_notice"]
+    assert result["source_ids"] == ["manual"]
+    assert result["metadata"]["candidate_count"] == 2
 
 
 def test_qa_service_image_intent_returns_image_candidates(tmp_path: Path):
@@ -381,3 +386,65 @@ def test_qa_service_image_intent_returns_image_candidates(tmp_path: Path):
     assert len(result["images"]) == 1
     assert result["images"][0]["image_id"] == "n4"
     assert result["rows"][0]["relation"] == "IMAGE_ASSOCIATED_WITH"
+    assert result["source_ids"] == ["manual", "retina"]
+    assert result["evidence_ids"] == ["ev3"]
+    assert result["metadata"]["image_count"] == 1
+
+
+def test_qa_service_not_found_returns_contract_fields(tmp_path: Path):
+    processed = tmp_path / "data" / "processed"
+    _write_csv(
+        processed / "nodes.csv",
+        [
+            {
+                "node_id": "d1",
+                "node_type": "Disease",
+                "canonical_name": "diabetes",
+                "knowledge_layer": "C",
+                "source_ids": "manual",
+                "kg_version": "0.2.0",
+            }
+        ],
+        fieldnames=["node_id", "node_type", "canonical_name", "knowledge_layer", "source_ids", "kg_version"],
+    )
+    _write_csv(processed / "edges.csv", [], fieldnames=[
+        "head_id",
+        "tail_id",
+        "edge_id",
+        "relation",
+        "source_id",
+        "extraction_method",
+        "confidence",
+        "knowledge_layer",
+        "kg_version",
+        "evidence_id",
+        "raw_relation",
+        "normalized_relation",
+    ])
+    _write_csv(processed / "images.csv", [], fieldnames=["image_id", "relative_path", "kg_version"])
+
+    intents_file = tmp_path / "intents.yaml"
+    _write_intent_contract(
+        intents_file,
+        {
+            "intents": [
+                {
+                    "name": "disease_symptoms",
+                    "description": "symptoms",
+                    "entity_types": ["Disease"],
+                    "relations": ["HAS_SYMPTOM"],
+                    "triggers": ["symptom", "symptoms"],
+                }
+            ],
+            "fallback": {"max_rows": 20, "max_hops": 2},
+        },
+    )
+    service = QAService(backend=PortableGraphBackend.from_dir(processed), intents_path=intents_file)
+    result = service.ask("What are symptoms of diabetes?")
+
+    assert result["status"] == "not_found"
+    assert result["evidence_ids"] == []
+    assert result["source_ids"] == ["manual"]
+    assert result["kg_version"] == "0.2.0"
+    assert "课程演示、非临床诊断" in result["safety_notice"]
+    assert "未能在当前知识库中找到关于 diabetes 的 disease_symptoms 信息" in result["answer"]
