@@ -1,73 +1,127 @@
-# Architecture
+﻿# Architecture
 
-## System goal
-A fully local, reproducible educational platform that reconstructs a diabetes-domain multimodal knowledge graph from two root datasets and answers bounded Chinese questions with graph paths, evidence, and related fundus images.
+## 1. System goal
 
-## Mandatory MVP
-1. Parse DiaKG annotations into canonical nodes, semantic edges, documents, and evidence chunks.
-2. Parse RetinaMNIST into relative image files/metadata and image-to-disease/grade/dataset/split edges.
-3. Validate and export portable graph files plus statistics.
-4. Load the graph idempotently into Neo4j.
-5. Provide at least eight deterministic QA intents using entity linking and parameterized read-only Cypher.
-6. Display answer, evidence, subgraph, related images, KG version, and non-diagnostic notice.
-7. Reproduce 3–5 fixed cases from scripts and capture screenshots.
+Build a reproducible, local, educational layered multimodal KGQA platform. Target scope is A/B/C medical knowledge for:
 
-## Optional bonus
-- Local LLM answer rewriting over structured evidence.
-- Image similarity search.
-- Uploaded-image experimental grading with a fixed model and saved metrics.
-- Automated Word report generation.
+- A layer: symptom, test, drug, anatomy, and body system concepts.
+- B layer: ICD codes, guideline rules, thresholds, units, and reference ranges.
+- C layer: disease application data for diabetes with diabetic retinopathy, pneumonia, and hypertension.
 
-## Offline data flow
-`raw root files -> parser -> normalized mentions -> canonicalization -> relation normalization -> QC -> portable graph files -> Neo4j import + indexes`
+The platform is educational and non-diagnostic.
 
-## Online request flow
-`question/image -> intent router -> entity linker -> approved graph query -> evidence/image retrieval -> answer composer -> API -> UI`
+## 2. Architecture principles
 
-## Recommended components
-- Python 3.11 application code
-- Neo4j Community in Docker for graph storage/visualization
-- FastAPI for APIs
-- Streamlit for course-demo UI
-- Pandas/Parquet for portable artifacts
-- RapidFuzz plus curated aliases for entity linking
-- Optional local text/image indexes; the MVP must not depend on them
+- Keep raw files under `data/raw/` immutable.
+- Resolve all implementation behavior from this source set: `docs/project_plan.md`, `configs/ontology.yaml`, `configs/intents.yaml`, and `data/source_manifest.yaml`.
+- All graph objects use deterministic IDs.
+- Every answer is bounded by evidence and includes an educational/non-diagnostic notice.
 
-## Core interfaces
-### QA input
-- `question: string`
-- optional `image_id` or uploaded image for bonus functions
+## 3. A/B/C knowledge architecture
 
-### QA output
-- `answer`
-- `intent`
-- linked `entities`
-- graph `paths`
-- `evidence`
-- related `images`
+### Layer A (general medical)
+- Symptom, test, test item, drug, adverse effect, anatomy, body system, and shared treatment support nodes.
+- Shared relations that can be reused by multiple diseases.
+
+### Layer B (standard and rules)
+- ICD_Code, Guideline, StandardRule, ReferenceRange, Unit, and diagnostic threshold nodes.
+- All rules carry traceable source provenance and versioned links.
+
+### Layer C (disease applications)
+- Diabetes with diabetic-retinopathy, pneumonia, and hypertension profiles.
+- Disease-stage/symptom/treatment/dataset/image relations.
+- Image modality nodes and metadata: fundus images and chest X-rays.
+
+## 4. Source and data contracts
+
+- DiaKG root data and parser output (or approved fixture when download is blocked).
+- RetinaMNIST+ root and parser output.
+- PneumoniaMNIST root and parser output.
+- A/B/C manual tables and alias tables.
+
+All sources must be listed in `data/source_manifest.yaml` with:
+
+- acquisition method,
+- license/terms note,
+- checksum,
+- root file,
+- extractor script.
+
+## 5. Offline build pipeline
+
+`raw roots -> parser -> normalized mentions -> canonicalization -> relation normalization -> quality checks -> portable graph exports -> API/UI/demo`
+
+Portable outputs are primary:
+
+- `data/processed/nodes.csv`, `data/processed/nodes.parquet`
+- `data/processed/edges.csv`, `data/processed/edges.parquet`
+- `data/processed/triples.tsv`
+- `data/processed/documents.parquet`, `data/processed/evidence.parquet`, `data/processed/images.parquet`
+- `data/processed/schema.json`, `data/processed/stats.json`, `data/processed/graph.graphml`
+- optional Neo4j dump under `data/processed/neo4j/`
+
+## 6. Online request flow
+
+`question -> intent router -> entity linker -> approved read-only parameterized query template -> evidence and image retrieval -> answer composer -> API -> UI`
+
+Every QA response must return:
+
+- `evidence_ids` and `source_ids`
 - `kg_version`
-- `trace_id`
 - `safety_notice`
 
-## Portable deliverable layout
-- `nodes.parquet` / `nodes.csv`
-- `edges.parquet` / `triples.tsv`
-- `documents.parquet`
-- `evidence.parquet`
-- `images.parquet`
-- `schema.json`
-- `stats.json`
-- `graph.graphml`
-- optional `neo4j.dump`
+## 7. Backend architecture
 
-## Count definitions
-- Canonical entity count: unique normalized conceptual/image/provenance nodes.
-- Unique semantic triple count: unique `(head, normalized_relation, tail)`.
-- Relation claim count: source-specific edge records retaining evidence.
-- Provenance edge count: `MENTIONED_IN` and document links.
-- Total graph edge count: all loaded relationships.
+- Portable-file backend is required and always runnable.
+- Neo4j backend is optional and should be idempotent when available.
+- If Docker/Neo4j is unavailable, QA/API should continue on portable backend and Neo4j validation should be marked BLOCKED.
 
-The README must report every category separately so the 10,000-entry requirement is transparent.
+## 8. QA safety controls
 
-## Safety boundary
-The platform does not diagnose, prescribe, or process patient data. Image labels and any model output are educational dataset demonstrations only.
+- Baseline QA path works without external LLM generation of Cypher.
+- No raw user text is concatenated into query templates.
+- Unknown questions return a bounded "not found in current knowledge base" response.
+- Ambiguous matches must return clarification choices.
+
+## 9. Frontend contract
+
+First screen is the real QA/demo workspace (not a marketing landing page).
+
+Required sections:
+
+- QA workspace
+- Graph explorer
+- Image retrieval
+- Layered statistics
+- Demo cases
+- Safety notice
+
+## 10. API contract
+
+- `GET /health`
+- `POST /qa`
+- `GET /entities/search`
+- `GET /graph/subgraph`
+- `GET /images/search`
+- `GET /stats`
+
+## 11. Quality gates
+
+Quality checks before export:
+
+- stable/unique node IDs and edge IDs
+- missing edge endpoints
+- relation domain/range validation
+- no unplanned self-loops
+- required properties completeness
+- relative image path validity
+
+Stats must separate:
+
+- canonical entities
+- unique semantic triples
+- evidence-backed relation claims
+- provenance edge count
+- image nodes
+- total edges
+- A/B/C-layer counts
