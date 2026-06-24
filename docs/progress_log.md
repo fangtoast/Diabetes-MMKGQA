@@ -587,3 +587,31 @@ Blockers:
 
 Next:
 - `INGEST-003`（实现 RetinaMNIST parser）。
+
+## 2026-06-25 - Phase 3 Parser Gate (INGEST-003)
+
+Task:
+- Implement RetinaMNIST parser for image metadata with deterministic IDs, stable split/grade/dataset links, and interim artifact export.
+
+Commands run:
+- `Get-Content` review of source-of-truth and parser baseline
+- `tests/test_ingest_retinamnist.py` added (determinism + repeatable export)
+- `TASKS.md` updated: `INGEST-003` set to DONE
+
+Result:
+- Added `src/diabetes_mmkgqa_starter/ingestion/retinamnist_parser.py` with:
+  - Deterministic image/dataset/split/grade node creation.
+  - Deterministic `IMAGE_ASSOCIATED_WITH`, `HAS_IMAGE_GRADE`, `FROM_DATASET`, `IN_SPLIT` edges.
+  - Evidence ID, extraction method, confidence, and layer metadata carried on each edge.
+  - Reusable record parser (`parse_retinamnist_records`) and npz-backed entry (`parse_retinamnist`).
+  - Interim exports: `retinamnist_nodes.csv`, `retinamnist_edges.csv`, `retinamnist_images.csv`.
+- Added `tests/test_ingest_retinamnist.py` with:
+  - Determinism checks on nodes/edges/images.
+  - Layer/relation/field presence checks.
+  - Repeatable export checksum checks.
+
+Blockers:
+- Parser currently relies on optional `numpy` availability when parsing real `retinamnist_224.npz`.
+
+Next:
+- `INGEST-004`（实现 PneumoniaMNIST parser）。
