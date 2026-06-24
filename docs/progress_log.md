@@ -1210,3 +1210,31 @@ Blockers:
 Next:
 
 - 进入 `PKG-001`：补齐 deliverables 打包说明与目录结构，确保不打包 unauthorized raw data。
+
+## 2026-06-25 - Phase 8 Package Gate (PKG-001)
+
+Task:
+
+- 实现最终打包命令与交付目录，补齐 PKG-001 状态，并确保打包流程排除 unauthorized raw 数据。
+
+Commands run:
+
+- `python scripts/package_deliverables.py --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip`
+- `python -m diabetes_mmkgqa_starter.cli --repo-root . --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip package`
+- `./scripts/run.ps1 package`
+- `python -m pytest tests/test_cli_smoke.py -k package`
+
+Result:
+
+- 新增 `scripts/package_deliverables.py` 和 `src/diabetes_mmkgqa_starter/package_builder.py`。
+- `Makefile` 与 `scripts/run.ps1` `package` 目标从占位改为真实打包流程。
+- `diabetes_mmkgqa_starter.cli package` 命令可输出压缩包路径、清单与状态。
+- `README`、`TASKS.md` 与 `TASKS` 状态同步更新，`PKG-001` 置为 `DONE`。
+
+Blockers:
+
+- `data/raw` 与 `data/interim` 仍按规则排除，不会打包进交付包；如需复现需外部按 source manifest 文档重新拉取。
+
+Next:
+
+- 完成验收检查：确认 `deliverables/diabetes_mmkgqa_deliverables.zip` 与 `deliverables/package-manifest.json` 内容与路径规范。

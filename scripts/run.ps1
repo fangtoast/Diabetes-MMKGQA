@@ -139,7 +139,23 @@ function Invoke-Report {
 function Invoke-Package {
     Write-Host '=== package ==='
     Ensure-Dir deliverables
-    Write-Placeholder 'Package command is scaffolded. deliverables package assembly should exclude unauthorized raw datasets.'
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        Write-Error 'python is required to run package assembly.'
+        exit 1
+    }
+    $prevPythonPath = $env:PYTHONPATH
+    try {
+        $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+        & python scripts/package_deliverables.py --package-output-dir (Join-Path (Get-Location) 'deliverables') --package-name 'diabetes_mmkgqa_deliverables.zip'
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "package failed with code $LASTEXITCODE"
+            exit $LASTEXITCODE
+        }
+    }
+    finally {
+        $env:PYTHONPATH = $prevPythonPath
+    }
+    Write-Host 'Package generated: deliverables\diabetes_mmkgqa_deliverables.zip' -ForegroundColor Green
 }
 
 function Show-Help {

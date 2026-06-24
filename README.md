@@ -39,7 +39,7 @@ make up         # 启动 API + 前端
 make demo       # 生成固定 demo case（docs/cases/demo_cases.json）
 make report     # 组装报告输入材料 docs/report_inputs.md
 make verify     # 待补齐 lint/完整 smoke 后再补齐
-make package    # 打包说明与 deliverables 目录（后续完成）
+make package    # 生成可复现交付包（排除 data/raw 与不可复现文件）
 ```
 
 > 某些命令可在 `scripts/run.ps1` 中通过 PowerShell 运行，若当前环境未提供 `make/docker/uv` 将在实现中提供兼容方式。
@@ -54,6 +54,7 @@ make package    # 打包说明与 deliverables 目录（后续完成）
 
 - `docs/report_inputs.md`：固定复现材料清单（`stats`、`source manifest`、demo case 清单、交付文件）。
 - `docs/cases/demo_cases.json`：固定演示 5 个用例（含 evidence/source/kg_version/safety_notice 输出字段）。
+- `deliverables/diabetes_mmkgqa_deliverables.zip`：最终交付压缩包（含 package 清单与校验文件）。
 - 重新生成报告输入材料：
   ```bash
   python scripts/assemble_report_inputs.py

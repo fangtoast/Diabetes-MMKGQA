@@ -98,6 +98,16 @@ def build_parser() -> ArgumentParser:
         help="Directory for demo case screenshots.",
     )
     parser.add_argument("--no-demo-screenshots", action="store_true", help="Skip screenshot generation for demo cases.")
+    parser.add_argument(
+        "--package-output-dir",
+        default=str(Path("deliverables")),
+        help="Directory for final deliverable packaging output.",
+    )
+    parser.add_argument(
+        "--package-name",
+        default="diabetes_mmkgqa_deliverables.zip",
+        help="Archive filename for package output.",
+    )
     return parser
 
 
@@ -169,6 +179,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"[cli] Generated {result['case_count']} demo cases -> {result['output_path']}")
             print(f"[cli] Demo screenshots: {result['screenshot_count']}")
             return 0
+        if command == "package":
+            from . import package_builder
+
+            result = package_builder.build_package(
+                repo_root=Path(args.repo_root),
+                processed_dir=Path(args.processed_dir),
+                output_dir=Path(args.package_output_dir),
+                archive_name=args.package_name,
+            )
+            summary = result["summary"]
+            print(
+                "[cli] Package status: "
+                f"{summary['status']}, archive={result['archive_path']}, files={summary['included_file_count']}"
+            )
+            if summary["blocked_reasons"]:
+                for reason in summary["blocked_reasons"]:
+                    print(f"[cli] BLOCKED: {reason}")
+            print(f"[cli] Package manifest: {result['summary_path']}")
+            print(f"[cli] Package files checksum: {summary['archive']['sha256']}")
+            return 0
         print(f"[cli] {command} scaffold ready.")
         return 0
 
@@ -177,3 +207,4 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
+

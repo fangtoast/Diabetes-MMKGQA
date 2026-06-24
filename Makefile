@@ -41,4 +41,5 @@ report:
 	@python scripts/assemble_report_inputs.py
 
 package:
-	@echo "TODO: create final deliverable archives"
+	@mkdir -p deliverables
+	@python scripts/package_deliverables.py --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip

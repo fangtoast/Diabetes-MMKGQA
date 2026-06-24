@@ -83,4 +83,4 @@ This ledger is the current TODO source. The long-form roadmap is
 |---|---|---|---|
 | DEMO-001 | DONE | Fixed reproducible cases | 3-5 cases generate JSON outputs and screenshots when available |
 | DOC-001 | DONE | Final README and report inputs | Counts come from generated stats; cases and commands are documented |
-| PKG-001 | TODO | Final packaging | Deliverables exclude unauthorized raw data and clean-room reproduction is documented |
+| PKG-001 | DONE | Final packaging | Deliverables exclude unauthorized raw data and clean-room reproduction is documented |
