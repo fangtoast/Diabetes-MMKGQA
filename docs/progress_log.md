@@ -382,3 +382,52 @@ Next:
 
 - `DATA-001` (create raw/interim/processed directory contract and README notes for directory usage).
 
+## 2026-06-24 - Phase 2 Data Contract Gate (DATA-001)
+
+Task:
+
+- Create `data/raw`、`data/interim`、`data/processed` 的目录契约与说明，建立数据层级约束。
+
+Commands run:
+
+- `New-Item -ItemType Directory` to create:
+  - `data/raw/`
+  - `data/raw/manual/`
+  - `data/raw/diakg/`
+  - `data/raw/retinamnist/`
+  - `data/raw/pneumoniamnist/`
+  - `data/interim/`
+  - `data/interim/manual/`
+  - `data/interim/diakg/`
+  - `data/interim/retinamnist/`
+  - `data/interim/pneumoniamnist/`
+  - `data/processed/`
+  - `data/processed/nodes/`
+  - `data/processed/edges/`
+  - `data/processed/triples/`
+  - `data/processed/images/`
+- `Set-Content` to add directory contracts:
+  - `data/README.md`
+  - `data/raw/README.md`
+  - `data/raw/manual/README.md`
+  - `data/raw/diakg/README.md`
+  - `data/raw/retinamnist/README.md`
+  - `data/raw/pneumoniamnist/README.md`
+  - `data/interim/README.md`
+  - `data/processed/README.md`
+- `Test-Path` checks for created directories and readmes.
+
+Result:
+
+- Data contract directories are now present and tracked.
+- Contract readmes were added for directory用途、命名、可复现和源文件约束。
+- No raw data files were created or modified during this task.
+- `TASKS.md` updated: `DATA-001` set to `DONE`.
+
+Blockers:
+
+- None.
+
+Next:
+
+- `DATA-002`（注册与获取 MedMNIST roots，下载/校验/许可证记录或明确阻塞策略）。

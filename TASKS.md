@@ -30,7 +30,7 @@ This ledger is the current TODO source. The long-form roadmap is
 
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
-| DATA-001 | TODO | Create raw/interim/processed directory contract | Directories and README notes exist without modifying raw files once present |
+| DATA-001 | DONE | Create raw/interim/processed directory contract | Directories and README notes exist without modifying raw files once present |
 | DATA-002 | TODO | Register and acquire MedMNIST roots | RetinaMNIST and PneumoniaMNIST download/checksum path is implemented or clearly blocked |
 | DATA-003 | TODO | Register DiaKG source | Authorized download path or manual acquisition doc plus fixture exists |
 | DATA-004 | TODO | Create A/B/C manual tables | Reviewed CSV fixtures for A terms, B standards, hypertension rules, and aliases exist |
