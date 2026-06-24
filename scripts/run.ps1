@@ -195,7 +195,50 @@ switch ($Command) {
 
     'up' {
         Invoke-MakeOrFallback -Target 'up' -FallbackMessage 'make up unavailable; backend service launcher is not implemented yet.' -Fallback {
-            Write-Placeholder 'Start services placeholder. Add API/UI startup command once FastAPI and UI are implemented.'
+            if (Get-Command uvicorn -ErrorAction SilentlyContinue) {
+                $args = @(
+                    'diabetes_mmkgqa_starter.api.app:app',
+                    '--app-dir', (Join-Path (Get-Location) 'src'),
+                    '--host', '0.0.0.0',
+                    '--port', '8000'
+                )
+                if ($Rest -and $Rest.Count -gt 0) {
+                    $args = $args + $Rest
+                }
+                & uvicorn @args
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Error "up failed with code $LASTEXITCODE"
+                    exit $LASTEXITCODE
+                }
+            }
+            elseif (Get-Command python -ErrorAction SilentlyContinue) {
+                $args = @(
+                    '-m', 'uvicorn',
+                    'diabetes_mmkgqa_starter.api.app:app',
+                    '--app-dir', (Join-Path (Get-Location) 'src'),
+                    '--host', '0.0.0.0',
+                    '--port', '8000'
+                )
+                if ($Rest -and $Rest.Count -gt 0) {
+                    $args = $args + $Rest
+                }
+                $prevPythonPath = $env:PYTHONPATH
+                try {
+                    $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+                    & python @args
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Error "up failed with code $LASTEXITCODE"
+                        exit $LASTEXITCODE
+                    }
+                }
+                finally {
+                    $env:PYTHONPATH = $prevPythonPath
+                }
+            }
+            else {
+                Write-Error 'Python or uvicorn is not available. Cannot start API server.'
+                exit 1
+            }
         }
     }
 

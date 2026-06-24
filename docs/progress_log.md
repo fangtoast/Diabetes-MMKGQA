@@ -997,3 +997,51 @@ Known blockers:
 Next:
 
 - 继续 `API-001`（FastAPI 接口层），先实现 health/qa/search/subgraph/stats。
+## 2026-06-25 - Phase 7 API Gate (API-001)
+
+Task:
+
+- Implement FastAPI endpoint contract and runbook for portable backend service.
+
+Commands run:
+
+- `python -m py_compile src/diabetes_mmkgqa_starter/api/__init__.py src/diabetes_mmkgqa_starter/api/app.py tests/test_api_endpoints.py`
+- `python -m pytest tests/test_api_endpoints.py -q`
+
+Result:
+
+- Added `src/diabetes_mmkgqa_starter/api/app.py` with endpoints:
+  - `GET /health`
+  - `POST /qa`
+  - `GET /entities/search`
+  - `GET /graph/subgraph`
+  - `GET /images/search`
+  - `GET /stats`
+- Added `src/diabetes_mmkgqa_starter/api/__init__.py` and default `app` instance for `uvicorn`.
+- Added API endpoint contract tests in `tests/test_api_endpoints.py` for backend-ready and backend-blocked behavior, QA/search/subgraph/images/stats flows, and safety notice propagation.
+- Updated `Makefile up` to run portable FastAPI backend via `uvicorn`.
+- Updated `scripts/run.ps1 up` fallback to attempt uvicorn startup with `src` module path and support extra args.
+- Verified `API-001` as DONE in `TASKS.md`.
+
+Blockers:
+
+- None for API-001 itself; runtime still depends on generated `data/processed` artifacts existing.
+
+Next:
+
+- Start `UI-001` with required Product Design brief workflow, then build UI around existing API endpoints.
+## 2026-06-25 - Phase 7 API Gate (API-001 verification refresh)
+
+Commands run:
+
+- `python -m pytest tests/test_api_endpoints.py -q`
+- `python -m pytest -q`
+
+Result:
+
+- API 端点用例通过：4 passed。
+- 全量测试通过：43 passed.
+
+Notes:
+
+- 该轮验证确认新增 `make up`/`run.ps1 up` 接口与现有 QA/图谱链路无回归。

@@ -19,7 +19,7 @@ kg:
 	@python -m diabetes_mmkgqa_starter.graph_builder
 
 up:
-	@echo "TODO: docker compose up -d"
+	@PYTHONPATH=src uvicorn diabetes_mmkgqa_starter.api.app:app --host 0.0.0.0 --port 8000 --reload
 
 load:
 	@if [ -n "$(NEO4J_PASSWORD)" ]; then \
