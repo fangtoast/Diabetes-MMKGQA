@@ -338,3 +338,47 @@ Next:
 
 - `BOOT-004` (package skeleton and smoke tests).
 
+## 2026-06-24 - Phase 1 Bootstrap Gate (BOOT-004)
+
+Task:
+
+- Add package skeleton and execute a minimal pytest smoke check.
+
+Commands run:
+
+- `New-Item -ItemType Directory -Force -Path tests`
+- `Get-Content pyproject.toml` (verify package entrypoint target still references `diabetes_mmkgqa_starter.cli:main`)
+- `python -m pytest`
+- `$env:PYTHONPATH='D:/project/diabetes_mmkgqa_starter/src'; python -m diabetes_mmkgqa_starter.cli --help`
+- `$env:PYTHONPATH='D:/project/diabetes_mmkgqa_starter/src'; python -c "from diabetes_mmkgqa_starter.cli import main; print(main([]))"`
+- `$env:PYTHONPATH='D:/project/diabetes_mmkgqa_starter/src'; python -c "from diabetes_mmkgqa_starter import __version__; print('version=', __version__)"`
+- `Get-Content src/diabetes_mmkgqa_starter/cli.py`
+- `Get-Content tests/test_cli_smoke.py`
+- `Get-Content tests/conftest.py`
+- `git status --short` (before commit)
+
+Result:
+
+- Added package scaffold:
+  - `src/diabetes_mmkgqa_starter/__init__.py`
+  - `src/diabetes_mmkgqa_starter/cli.py`
+- Added CLI smoke test suite:
+  - `tests/conftest.py`
+  - `tests/test_cli_smoke.py`
+- Verified `python -m pytest` returns 3 passed tests.
+- Verified CLI help command is available via module execution.
+- Verified `main([])` returns `0` and prints help.
+- Verified package version constant is `0.1.0` and CLI accepts `--version`.
+
+Task status change:
+
+- `BOOT-004` marked `DONE`.
+
+Blockers:
+
+- None for this bootstrap gate.
+
+Next:
+
+- `DATA-001` (create raw/interim/processed directory contract and README notes for directory usage).
+
