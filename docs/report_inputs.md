@@ -1,6 +1,6 @@
 # Report Inputs
 
-- 生成时间：2026-06-24T18:15:27.195996+00:00
+- 生成时间：2026-06-24T19:04:17.084416+00:00
 - 数据版本：0.2.0
 - 根证据：所有医学问答与 API 响应均要求返回 evidence/source/kg_version/safety_notice。
 - 安全声明：课程演示、非临床诊断
@@ -17,17 +17,17 @@ python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json 
 
 ## 统计指标（来自 stats.json）
 
-- canonical_entity_count: 31
-- unique_semantic_triples_count: 24
+- canonical_entity_count: 36
+- unique_semantic_triples_count: 28
 - evidence_backed_relation_claim_count: 5
 - provenance_edge_count: 3
 - image_metadata_count: 0
 - image_node_count: 0
-- node_count: 35
-- edge_count: 24
+- node_count: 40
+- edge_count: 28
 
-- A/B/C Layered Nodes: A=5 / B=18 / C=12
-- A/B/C Layered Edges: A=2 / B=19 / C=3
+- A/B/C Layered Nodes: A=9 / B=18 / C=13
+- A/B/C Layered Edges: A=6 / B=19 / C=3
 
 ### 层内细分
 
@@ -56,15 +56,15 @@ python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json 
 - case_count: 5
 - cases:
   - `DEMO-001` Disease ambiguity clarification (clarification)
-    screenshot: None
+    screenshot: docs\screenshots\demo_001.png
   - `DEMO-002` Guideline ambiguity clarification (clarification)
-    screenshot: None
+    screenshot: docs\screenshots\demo_002.png
   - `DEMO-003` ICD clarification (clarification)
-    screenshot: None
+    screenshot: docs\screenshots\demo_003.png
   - `DEMO-004` Graph neighborhood check (ok)
-    screenshot: None
+    screenshot: docs\screenshots\demo_004.png
   - `DEMO-005` Statistics snapshot (ok)
-    screenshot: None
+    screenshot: docs\screenshots\demo_005.png
 
 ## 交付材料
 

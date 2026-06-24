@@ -1359,3 +1359,32 @@ Blockers:
 Next:
 
 - 如需进一步收官，可复核 `docs/architecture.md` 与 `configs/ontology.yaml` 的规则注释是否与该修复保持一致。
+## 2026-06-25 - Verification refresh pass
+
+Task:
+
+- 进行一轮不改功能边界的可复现性复核：全量测试 + portable 验证，确认项目处于可交付状态。
+
+Commands run:
+
+- `python -m pytest tests -q`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli verify --backend portable`
+- `python -m diabetes_mmkgqa_starter.cli verify --backend portable`（`PYTHONPATH=src`）
+- `python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json --demo-screenshot-dir docs/screenshots --no-demo-screenshots`
+- `python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json --output-path docs/report_inputs.md`
+- `python scripts/assemble_report_inputs.py`（默认路径）
+
+Result:
+
+- `pytest` 全量通过（39 passed）。
+- `cli verify` 输出 `verify passed`，`portable` 健康检查 OK，节点 40/边 28 加载成功。
+- 演示案例文件输出仍为 5 条，用例快照路径更新为 `docs\screenshots\demo_001.png` ... `demo_005.png`。
+- `docs/report_inputs.md` 统计指标与时间戳刷新完成，`A/B/C` 层统计与 `node_count` / `edge_count` 与当前图谱一致。
+
+Blockers:
+
+- 说明性非功能警告：`starlette` 输出 `allow_redirects` 参数弃用告警（不影响行为）。
+
+Next:
+
+- 如果需要最终交付归档前最后一次快照一致性核对，可执行 `./scripts/run.ps1 package` 与 `deliverables/package-manifest.json` 校验。
