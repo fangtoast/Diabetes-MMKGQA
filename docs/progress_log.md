@@ -532,3 +532,30 @@ Blockers:
 
 Next:
 - 继续执行 `INGEST-001`：实现 A/B 手工表解析器，并补齐其测试与确定性输出。
+## 2026-06-25 - Phase 3 Parser Gate (INGEST-001)
+
+Task:
+- Implement A/B manual table parsers for stable CSV -> normalized nodes/edges output with deterministic IDs.
+
+Commands run:
+- `python -m pytest tests/test_ingest_manual.py`
+- `python -m pytest`
+
+Result:
+- Added `src/diabetes_mmkgqa_starter/ingestion/manual_ab_tables.py` with:
+  - Deterministic node/edge ID generation via SHA-1.
+  - Deterministic parsing of `manual_a_general_terms.csv`, `manual_b_icd10_subset.csv`,
+    `manual_b_guideline_rules.csv`, `manual_c_hypertension_rules.csv`, and `aliases.csv`.
+  - Stable output merge and sorting by node_id/edge_id.
+  - Export helper for interim artifacts (`manual_nodes.csv`, `manual_edges.csv`, `manual_aliases.csv`).
+- Added `tests/test_ingest_manual.py` with:
+  - Determinism checks (double-parse equality).
+  - Required relation/type assertions.
+  - Repeatable export hash checks.
+- `TASKS.md` updated: `INGEST-001` set to DONE.
+
+Blockers:
+- None for parser implementation.
+
+Next:
+- `INGEST-002`（实现 DiaKG parser）。

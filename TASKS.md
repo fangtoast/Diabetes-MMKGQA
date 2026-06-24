@@ -39,7 +39,7 @@ This ledger is the current TODO source. The long-form roadmap is
 
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
-| INGEST-001 | TODO | Implement A/B manual table parsers | Parser tests pass and outputs are deterministic |
+| INGEST-001 | DONE | Implement A/B manual table parsers | Parser tests pass and outputs are deterministic |
 | INGEST-002 | TODO | Implement DiaKG parser | Fixture and full-file paths preserve evidence IDs and raw relations |
 | INGEST-003 | TODO | Implement RetinaMNIST parser | Images and metadata export with stable IDs, split, grade, dataset links |
 | INGEST-004 | TODO | Implement PneumoniaMNIST parser | Chest X-ray metadata and disease-label links export deterministically |
