@@ -615,3 +615,31 @@ Blockers:
 
 Next:
 - `INGEST-004`（实现 PneumoniaMNIST parser）。
+
+## 2026-06-25 - Phase 3 Parser Gate (INGEST-004)
+
+Task:
+- Implement PneumoniaMNIST parser for chest X-ray metadata with deterministic IDs, split/label links, and portable image metadata export.
+
+Commands run:
+- `Get-Content` review of parser/test baseline
+- `tests/test_ingest_pneumoniamnist.py` added (determinism + repeatable export)
+- `TASKS.md` updated: `INGEST-004` set to DONE
+
+Result:
+- Added `src/diabetes_mmkgqa_starter/ingestion/pneumoniamnist_parser.py` with:
+  - Deterministic dataset/disease/split/grade node creation.
+  - Deterministic `IMAGE_ASSOCIATED_WITH`, `HAS_IMAGE_GRADE`, `FROM_DATASET`, `IN_SPLIT` edges.
+  - Edge fields including `evidence_id`, `source_id`, `extraction_method`, `confidence`, `knowledge_layer`, `raw_relation`, `normalized_relation`.
+  - Reusable record parser (`parse_pneumoniamnist_records`) and npz-backed entry (`parse_pneumoniamnist`).
+  - Interim exports: `pneumoniamnist_nodes.csv`, `pneumoniamnist_edges.csv`, `pneumoniamnist_images.csv`.
+- Added `tests/test_ingest_pneumoniamnist.py` with:
+  - Determinism checks (double parse).
+  - Required node/relation/type assertions.
+  - Repeatable export checksum checks.
+
+Blockers:
+- Parser relies on optional `numpy` availability when parsing real `pneumoniamnist_224.npz`.
+
+Next:
+- `NORM-001`（实现别名加载与实体规范化）。
