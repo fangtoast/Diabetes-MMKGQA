@@ -85,6 +85,12 @@ This ledger is the current TODO source. The long-form roadmap is
 | DOC-001 | DONE | Final README and report inputs | Counts come from generated stats; cases and commands are documented |
 | PKG-001 | DONE | Final packaging | Deliverables exclude unauthorized raw data and clean-room reproduction is documented |
 
+## Phase 9 - Packaging closure
+
+| ID | Status | Task | Acceptance criteria |
+|---|---|---|---|
+| PKG-VERIFY-002 | DONE | Final packaging artifact audit | `deliverables/diabetes_mmkgqa_deliverables.zip` and staging manifest contain only `docs/screenshots/demo_001.png`~`demo_005.png`, no `manual_test_abs.png`, no `data/raw` paths; `docs/report_inputs.md` and `docs/cases/demo_cases.json` are consistent with 5 demo cases and captured screenshots. |
+
 ## Phase 9 - Verification and environment alignment
 
 | ID | Status | Task | Acceptance criteria |

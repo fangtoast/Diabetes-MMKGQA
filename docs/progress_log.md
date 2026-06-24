@@ -1448,3 +1448,47 @@ Blockers:
 Next:
 
 - 继续 `Phase 9` 打包前的清单核对（`deliverables` 与报告截图索引一致性）。
+
+## 2026-06-26 - Packaging closure verification (PKG-VERIFY-002)
+
+Task:
+
+- 最终核验交付包内容一致性，清理截图噪音并完成打包收官。
+
+Commands run:
+
+- `Remove-Item docs/screenshots/manual_test_abs.png`
+- `$env:PYTHONPATH='src'; python -m diabetes_mmkgqa_starter.cli --repo-root . --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip package`
+- `python -c "import json, pathlib; data=json.loads(pathlib.Path('deliverables/_package_staging/package/package-manifest.json').read_text(encoding='utf-8')); files=data.get('files',[]); print('manifest_count', len(files)); print('demo_count', sum(1 for f in files if 'platform/docs/screenshots/demo_' in f['archive_path'])); print('manual_count', sum(1 for f in files if 'manual_test_abs.png' in f['archive_path'])); print('has_data_raw', any('data/raw' in f['archive_path'].replace('\\\\','/') for f in files))"`
+- `python -c "import json, pathlib; data=json.loads(pathlib.Path('docs/cases/demo_cases.json').read_text(encoding='utf-8')); print('case_count', data.get('case_count')); print('len', len(data['cases']))"`
+- `python -c "import pathlib; text=pathlib.Path('docs/report_inputs.md').read_text(encoding='utf-8'); print('has_demo_001', 'docs\\screenshots\\demo_001.png' in text); print('has_manual', 'manual_test_abs.png' in text)"`
+- `python -c "import zipfile, pathlib; names=zipfile.ZipFile(pathlib.Path('deliverables/diabetes_mmkgqa_deliverables.zip'), 'r').namelist(); print('zip_demo_count', sum(1 for n in names if 'platform/docs/screenshots/demo_' in n and n.endswith('.png')); print('zip_manual', any('manual_test_abs.png' in n for n in names)); print('zip_data_raw', any('data/raw/' in n for n in names)); print('zip_included', len(names))"`
+
+Result:
+
+- `docs/screenshots/manual_test_abs.png` 已移除。
+- 重新打包成功：`[cli] Package status: READY, files=88`，产物 `deliverables/diabetes_mmkgqa_deliverables.zip` 生成。
+- staging manifest 核验通过：
+  - `manifest_count=89`
+  - `demo_count=5`
+  - `manual_count=0`
+  - `has_data_raw=0`
+- `docs/cases/demo_cases.json` 核验通过：
+  - `case_count=5`
+  - 5 条截图均为 `captured`
+- `docs/report_inputs.md` 核验通过：
+  - 含有 `docs\\screenshots\\demo_001.png`
+  - 不含 `manual_test_abs.png`
+- 打包 zip 清单核验：
+  - `zip_demo_count=5`
+  - `zip_manual=False`
+  - `zip_data_raw=False`
+  - `zip_included=89`
+
+Blockers:
+
+- 无新增阻塞。
+
+Next:
+
+- 收官提交：将收口项 `PKG-VERIFY-002` 标记为 DONE，并在一次最小验收命令后提交。
