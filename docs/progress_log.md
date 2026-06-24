@@ -135,3 +135,46 @@ Next:
 
 - Next task: `DATA-CONTRACT-001` (register/upgrade data source manifest).
 
+## 2026-06-24 - Phase 0 Contract Upgrade (DATA-CONTRACT-001)
+
+Task:
+
+- Upgrade `data/source_manifest.yaml` to register all required A/B/C data sources and
+  acquisition contracts for reproducible evidence tracking.
+
+Commands run:
+
+- Read source-of-truth files:
+  `AGENTS.md`, `docs/project_plan.md`, `TASKS.md`, `docs/progress_log.md`,
+  `docs/architecture.md`, `configs/ontology.yaml`, `configs/intents.yaml`,
+  `data/source_manifest.yaml`.
+- Replaced `data/source_manifest.yaml` with expanded entries for:
+  - DiaKG source + offline fallback fixture
+  - RetinaMNIST+
+  - PneumoniaMNIST
+  - A 层手工词表
+  - B 层 ICD/指南规则表
+  - C 层高血压规则表
+  - aliases 统一映射表
+
+Result:
+
+- `DATA-CONTRACT-001` set to DONE.
+- Manifest now includes required source contract fields:
+  - acquisition
+  - license_or_terms
+  - checksum
+  - root_file
+  - extractor
+- Verified with Python/YAML checks:
+  - `loaded= True`
+  - `version= 0.2.0`
+  - `source_count= 9`
+  - `required_ids_present= True`
+  - `missing= []`
+  - `field_violations= []`
+
+Next:
+
+- Next task: `DOC-BOOT-001` (README/root document pointers).
+

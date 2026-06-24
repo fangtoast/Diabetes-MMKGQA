@@ -1,23 +1,83 @@
-version: 0.1.0
+﻿version: 0.2.0
 sources:
   - source_id: diakg
     title: DiaKG annotated diabetes corpus
     root_file: data/raw/diakg/diakg.json
-    acquisition: Apply/download from the official distribution and place the approved file at root_file.
+    acquisition: Request official access and place the approved DiaKG JSON at the configured root_file.
     checksum: TO_BE_FILLED_AFTER_DOWNLOAD
-    license_or_terms: Record the exact data-use terms accepted during download; do not redistribute if prohibited.
+    license_or_terms: Check and record DiaKG terms before use. Do not redistribute raw DiaKG files.
     extractor: src/ingestion/diakg_parser.py
-    expected_content: document-paragraph-sentence hierarchy with entity and relation annotations
+    expected_content: document-paragraph-sentence hierarchy with entity/relation annotations
+    immutable: true
+
+  - source_id: manual_diakg_fallback
+    title: DiaKG fallback fixture for offline development
+    root_file: data/raw/diakg/diakg_fixture.json
+    acquisition: Create a small, manually reviewed fixture copied from approved source snippets when automatic download is unavailable.
+    checksum: local_managed
+    license_or_terms: Must follow upstream terms; fixture contains only derived training subset for project development.
+    extractor: src/ingestion/diakg_parser.py
+    expected_content: minimal DiaKG-like records including entity and relation examples
     immutable: true
 
   - source_id: retinamnist
     title: MedMNIST RetinaMNIST+
     root_file: data/raw/retinamnist/retinamnist_224.npz
-    acquisition: Download through the official MedMNIST API/distribution.
+    acquisition: Download from official MedMNIST distribution (or mirror) when network access is available.
     checksum: VERIFY_AGAINST_OFFICIAL_METADATA
-    license_or_terms: CC BY 4.0; cite MedMNIST and the original source dataset.
+    license_or_terms: CC BY 4.0 (MedMNIST); include the original dataset source citation in project docs.
     extractor: src/ingestion/retinamnist_parser.py
     expected_content: train/val/test images and 5-level diabetic-retinopathy labels
+    immutable: true
+
+  - source_id: pneumoniamnist
+    title: MedMNIST PneumoniaMNIST
+    root_file: data/raw/pneumoniamnist/pneumoniamnist_224.npz
+    acquisition: Download from official MedMNIST distribution (or mirror) when network access is available.
+    checksum: VERIFY_AGAINST_OFFICIAL_METADATA
+    license_or_terms: CC BY 4.0 (MedMNIST); include dataset source citation in project docs.
+    extractor: src/ingestion/pneumoniamnist_parser.py
+    expected_content: train/val/test chest X-ray images and pneumonia labels
+    immutable: true
+
+  - source_id: manual_a_general_terms
+    title: Manual A-layer term table
+    root_file: data/raw/manual/a_general_terms.csv
+    acquisition: Curated project-maintained table of medical terms.
+    checksum: TO_BE_GENERATED
+    license_or_terms: Project-maintained course artifact.
+    extractor: src/ingestion/manual_ab_tables.py
+    expected_content: CSV columns such as canonical_name, node_type, synonyms, description
+    immutable: true
+
+  - source_id: manual_b_icd10_subset
+    title: Manual ICD-10-CM subset
+    root_file: data/raw/manual/b_icd10_subset.csv
+    acquisition: Small project-maintained subset selected from public ICD-10-CM tables.
+    checksum: TO_BE_GENERATED
+    license_or_terms: Public source terms from CDC/WHO where applicable; include citation URL in docs.
+    extractor: src/ingestion/manual_ab_tables.py
+    expected_content: CSV columns such as disease_name, icd_code, disease_layer, note
+    immutable: true
+
+  - source_id: manual_b_guideline_rules
+    title: Manual guideline and threshold table
+    root_file: data/raw/manual/b_guideline_rules.csv
+    acquisition: Manually extracted rule subset from public guideline/ADA/WHO references.
+    checksum: TO_BE_GENERATED
+    license_or_terms: Respect source references and include citation links in docs.
+    extractor: src/ingestion/manual_ab_tables.py
+    expected_content: CSV columns such as disease_name, rule_type, code, value, unit, source_ref, comments
+    immutable: true
+
+  - source_id: manual_c_hypertension_rules
+    title: Manual hypertension standard rules
+    root_file: data/raw/manual/c_hypertension_rules.csv
+    acquisition: Manually curated hypertension starter rule table for C-layer use.
+    checksum: TO_BE_GENERATED
+    license_or_terms: Project-maintained course artifact.
+    extractor: src/ingestion/manual_ab_tables.py
+    expected_content: CSV columns such as rule_name, disease_name, finding, severity, recommendation, source
     immutable: true
 
   - source_id: manual_aliases
