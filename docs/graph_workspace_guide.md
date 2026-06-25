@@ -1,8 +1,9 @@
 <!--
 Purpose: User guide for the Obsidian-inspired KGQA graph workspace.
-Author: fangtoast
-Email: fangtoast@foxmail.com
-Copyright (c) 2026 fangtoast. All rights reserved.
+Authors: Xiao Fang; XinYuan Zhang; Shuo Ma
+Contact: fangtoast@foxmail.com
+Copyright (c) 2026 Xiao Fang, XinYuan Zhang, and Shuo Ma
+License: MIT
 -->
 
 # 图谱工作台使用指南

@@ -1618,6 +1618,32 @@ Blockers:
 
 - 无。
 
+## 2026-06-25 - Open-source license and GitHub ownership metadata
+
+Task:
+
+- 为 GitHub 开源发布补齐 MIT `LICENSE`、作者/联系方式、第三方数据与依赖许可边界，并明确本项目为国防科技大学知识图谱课程项目。
+
+Planned changes:
+
+- 新增 `LICENSE`、`AUTHORS.md`、`THIRD_PARTY_NOTICES.md`。
+- 更新 `README.md`、`pyproject.toml`、`.gitignore` 和相关文档头部，使 copyright、contact、MIT license 与第三方数据边界一致。
+- 保留 DiaKG、MedMNIST 和 D3 的原始许可/访问限制；不将第三方数据重新授权为 MIT。
+
+Commands run:
+
+- `git diff --check`
+- `.venv\\Scripts\\python.exe -c "import tomllib; tomllib.load(open('pyproject.toml','rb'))"`
+- `.venv\\Scripts\\python.exe -m pytest tests -q`
+- `.\\scripts\\run.ps1 verify`
+
+Results:
+
+- `git diff --check` passed.
+- `pyproject.toml` parsed successfully with `tomllib`.
+- `.venv\\Scripts\\python.exe -m pytest tests -q` passed: 53 tests, 1 Starlette deprecation warning.
+- `.\\scripts\\run.ps1 verify` passed through the PowerShell fallback, including portable backend health with nodes=7511, edges=29852, images=7456.
+
 ## 2026-06-25 - README visual screenshot gallery refresh
 
 Task:
@@ -1679,3 +1705,45 @@ Results:
 Blockers:
 
 - 无。
+
+## 2026-06-25 - UI-006 QA discoverability and image/graph UX repair
+
+Task:
+
+- 修复用户反馈的三个可用性问题：医学影像结果无法滚动、图谱节点点击闪屏、QA 不知道该问什么且中文自然问法实体链接失败。
+
+Changes:
+
+- `src/diabetes_mmkgqa_starter/qa/service.py` 增加中文问法填充词清洗和限定类型内的嵌入式实体候选匹配，使 `糖尿病有哪些症状`、`糖尿病需要做哪些检查`、`高血压的ICD编码是什么`、`糖尿病视网膜病变有哪些影像示例` 能走原有只读模板路径返回证据约束答案。
+- `frontend/index.html` 和 `frontend/app.js` 增加中文可点击 QA 示例，Demo Cases 改为中文主链路；图谱节点单击只更新焦点和右侧详情，局部图谱加载仍可居中。
+- `frontend/styles.css` 为 Image Retrieval 增加 bounded results scroll region，并修复 grid item `min-height: 0` 导致滚动容器被内容撑开的布局问题。
+- `README.md` 和 `docs/graph_workspace_guide.md` 增加“知识问答可问什么”、可验证示例和边界说明。
+- `tests/test_qa_service.py` 和 `tests/test_frontend_graph_ui.py` 增加中文 QA、QA 示例、影像滚动容器、图谱点击不居中的回归断言。
+
+Commands run:
+
+- `.\\.venv\\Scripts\\python.exe -m pytest tests\\test_qa_service.py tests\\test_frontend_graph_ui.py tests\\test_api_endpoints.py -q`
+- `.\\scripts\\start.ps1 -Port 8016 -SkipData -SkipKg -SkipLoad -NoBrowser -HealthTimeoutSec 45`
+- Headless Chrome CDP smoke against `http://127.0.0.1:8016/ui`
+- `Invoke-RestMethod http://127.0.0.1:8016/images/search?limit=80`
+- `.\\scripts\\run.ps1 verify`
+
+Results:
+
+- Targeted tests passed: 16 passed, 1 existing Starlette `allow_redirects` deprecation warning.
+- `run.ps1 verify` passed through the PowerShell fallback: 53 tests passed, then portable backend loaded with `nodes=7511`, `edges=29852`, `images=7456`.
+- Headless Chrome smoke passed: QA example returned `status=ok`; Image Retrieval rendered 80 cards with `clientHeight=631`, `scrollHeight=9206`, `scrollTop=8575` after scroll; graph click selected 1 node and preserved transform exactly before/after click; browser errors were 0.
+- Browser plugin path was unavailable because the required JS browser control tool was not exposed; validation used local headless Chrome CDP fallback.
+
+Task status change:
+
+- `UI-006` added and marked `DONE`.
+
+Blockers:
+
+- 无。
+
+Remaining risks:
+
+- 药物、副作用、参考范围、数据集或拆分检索仍取决于当前图谱实体/别名覆盖；未覆盖时会按安全合同返回 `not_found` 或澄清候选。
+- Headless verification覆盖 Chrome 桌面视口；移动端布局本轮仅保留既有响应式规则，未重新截图。

@@ -1,8 +1,9 @@
 <!--
 Purpose: Track frontend third-party vendor files.
-Author: fangtoast
-Email: fangtoast@foxmail.com
-Copyright (c) 2026 fangtoast. All rights reserved.
+Authors: Xiao Fang; XinYuan Zhang; Shuo Ma
+Contact: fangtoast@foxmail.com
+Copyright (c) 2026 Xiao Fang, XinYuan Zhang, and Shuo Ma
+License: MIT
 -->
 
 # Frontend Vendor Notes

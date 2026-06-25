@@ -1,8 +1,9 @@
 ﻿<!--
 title: Diabetes MMKGQA
-author: Diabetes MMKGQA Starter
-email: diabetes-mmkgqa-starter
-copyright: Educational use only
+authors: Xiao Fang; XinYuan Zhang; Shuo Ma
+contact: fangtoast@foxmail.com
+copyright: Copyright (c) 2026 Xiao Fang, XinYuan Zhang, and Shuo Ma
+license: MIT
 -->
 
 <div align="center">
@@ -23,7 +24,7 @@ copyright: Educational use only
 
 ## 这是一个什么项目
 
-本仓库是课程演示项目，用于搭建可复现的分层（A/B/C）医学知识图谱与多模态问答平台。该仓库用于教学与研究演示，不构成医疗诊断或治疗建议。
+本仓库是国防科技大学知识图谱课程项目，用于搭建可复现的分层（A/B/C）医学知识图谱与多模态问答平台。该仓库用于教学与研究演示，不构成医疗诊断或治疗建议。
 
 ## 文档入口
 
@@ -34,10 +35,25 @@ copyright: Educational use only
 - [架构说明](docs/architecture.md)
 - [图谱工作台使用指南](docs/graph_workspace_guide.md)
 - [前端 vendor 说明](docs/frontend_vendor.md)
+- [作者与联系方式](AUTHORS.md)
+- [开源许可证](LICENSE)
+- [第三方许可与数据边界](THIRD_PARTY_NOTICES.md)
 - [数据来源说明](data/source_manifest.yaml)
 - [本体定义](configs/ontology.yaml)
 - [意图定义](configs/intents.yaml)
 - [构建与交付规则](AGENTS.md)
+
+## 作者与联系方式
+
+- 合作人：Xiao Fang、XinYuan Zhang、Shuo Ma
+- 联系方式：`fangtoast@foxmail.com`
+- 课程归属：国防科技大学知识图谱课程项目
+
+## 开源许可与数据声明
+
+本项目原创代码、项目自有文档和课程维护材料按 [MIT License](LICENSE) 开源。第三方数据、第三方依赖和受限语料不因本仓库的 MIT 许可而被重新授权，具体边界见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [data/source_manifest.yaml](data/source_manifest.yaml)。
+
+MedMNIST 数据根文件和完整 DiaKG 原始语料默认不随仓库再分发；如需复现实验，请按来源说明自行获取授权数据或使用仓库内受控 fixture。所有界面与问答输出均为课程演示、非临床诊断用途。
 
 ## 快速开始（Windows）
 
@@ -260,8 +276,9 @@ node .\scripts\capture_readme_screenshots.mjs --base-url http://127.0.0.1:8000 -
 
 ## English summary
 
-This project is an educational starter for a reproducible layered (A/B/C) medical KGQA platform with multimodal support.
+This project is an educational Knowledge Graph course project at the National University of Defense Technology. It provides a reproducible layered (A/B/C) medical KGQA platform with multimodal support.
 
 - Follow the same source-of-truth contract as `AGENTS.md` and `docs/project_plan.md`.
 - Use the `make` command suite or `scripts/run.ps1` wrapper for reproducible workflows.
 - Keep all responses educational and evidence-bounded.
+- Original project code and project-owned documentation are released under the MIT License; third-party datasets and vendored dependencies retain their own terms.
