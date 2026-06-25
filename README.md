@@ -32,6 +32,8 @@ copyright: Educational use only
 - [任务台账](TASKS.md)
 - [阶段进度日志](docs/progress_log.md)
 - [架构说明](docs/architecture.md)
+- [图谱工作台使用指南](docs/graph_workspace_guide.md)
+- [前端 vendor 说明](docs/frontend_vendor.md)
 - [数据来源说明](data/source_manifest.yaml)
 - [本体定义](configs/ontology.yaml)
 - [意图定义](configs/intents.yaml)
@@ -87,8 +89,50 @@ make up
 服务启动后默认监听 `http://127.0.0.1:8000`。
 
 - Web 界面：`http://127.0.0.1:8000/ui`
+- 关系图谱直达：`http://127.0.0.1:8000/ui?tab=graph`
 - 健康检查：`http://127.0.0.1:8000/health`
 - API 文档：`http://127.0.0.1:8000/docs`
+
+### 1.5）推荐：一键启动（自动化）
+
+```powershell
+# 一键启动（默认执行图谱构建+导入+启动 API，并自动打开 UI）
+.\scripts\start.ps1
+
+# 已有图谱产物时可跳过部分步骤
+.\scripts\start.ps1 -SkipData
+.\scripts\start.ps1 -SkipData -SkipKg -SkipLoad
+
+# 指定端口、禁用自动打开浏览器
+.\scripts\start.ps1 -Port 8010 -NoBrowser
+```
+
+默认行为：
+- 顺序执行 `cli data -> kg -> load -> up`（`load` 使用 `portable` 后端）
+- 启动后自动等待 `/health`
+- 成功后自动打开 `http://127.0.0.1:8000/ui`（可加 `-NoBrowser` 关闭）
+
+> 脚本可用于课程演示的快速回放；如为正式回归，建议先单独执行 `.\scripts\run.ps1 bootstrap` 完成依赖与环境准备。
+
+#### Web 启动复核
+
+如果默认 `8000` 端口已被占用，可以临时指定其他端口：
+
+```powershell
+.\scripts\start.ps1 -Port 8012 -SkipData -SkipKg -SkipLoad -NoBrowser
+```
+
+最近一次本地复核使用上述命令启动成功，并确认：
+
+| 检查项 | 结果 |
+|---|---:|
+| `/health` | `status=ready`, `backend_ready=true`, `backend=portable` |
+| portable graph | `nodes=7511`, `edges=29852`, `images=7456` |
+| `/ui` | `200` |
+| `/ui?tab=graph` | `200` |
+| `/graph/overview?limit=80&include_images=false` | `nodes=32`, `edges=28` |
+
+该复核只验证 Web/API 启动，不重建数据或图谱；如果你修改了数据、解析器或图谱构建逻辑，请先运行 `.\scripts\run.ps1 kg` 与 `.\scripts\run.ps1 verify`。
 
 ### 2）快速验收（可复现）
 
@@ -111,19 +155,20 @@ make verify    # 或：.\scripts\run.ps1 verify
 make package   # 或：.\scripts\run.ps1 package
 ```
 
-### 4）数据导入 TODO（真实数据）
+### 4）真实数据接入状态
 
 - [x] 已登记来源与校验规则：`data/source_manifest.yaml`
 - [x] 已提供离线联调备选：`data/raw/diakg/diakg_fixture.json`
-- [ ] **未完成：真实数据集文件导入（RetinaMNIST / PneumoniaMNIST）**
-- [ ] 下载真实 MedMNIST 根文件（需网络）：
-  - `python scripts/fetch_medmnist.py --dataset all --download`
-- [ ] 运行数据源检查与导入链路：
-  - `.\scripts\run.ps1 data`
-  - `.\scripts\run.ps1 kg`
-  - `.\scripts\run.ps1 load`
+- [x] 已接入真实图像根文件：`data/raw/retinamnist/retinamnist_224.npz`、`data/raw/pneumoniamnist/pneumoniamnist_224.npz`
+- [x] 图谱产物已统计到真实图像：
+  - `image_metadata_count = 7456`
+  - `image_node_count = 7456`
+  - `warnings = []`
 
-> 当前 `data/raw` 目录还未包含真实的 `retinamnist_224.npz` 和 `pneumoniamnist_224.npz`，所以当前图谱导入依赖离线 fixture。
+如需重建产物可执行：
+- `python -m diabetes_mmkgqa_starter.cli data --repo-root .`
+- `python -m diabetes_mmkgqa_starter.cli kg --repo-root .`
+- `python -m diabetes_mmkgqa_starter.cli load --backend portable --repo-root .`
 
 ## 功能演示命令（可直接复现）
 
@@ -140,43 +185,68 @@ python -m diabetes_mmkgqa_starter.cli package --repo-root .
 
 > 如果你直接在 `scripts/run.ps1` 里切了工作目录，需要确保仍位于 `D:\\project\\diabetes_mmkgqa_starter` 仓库根目录。
 
+## 知识问答可问什么
+
+当前 QA 是证据约束的课程演示，不是开放医疗聊天。推荐先从这些已验证问题开始：
+
+| 类别 | 可直接输入的问题 | 预期返回 |
+|---|---|---|
+| 疾病知识 | `糖尿病有哪些症状` | 症状关系、证据/source、KG 版本 |
+| 检查项 | `糖尿病需要做哪些检查` | 检查/检查项关系 |
+| 标准编码 | `高血压的ICD编码是什么` | ICD 编码关系 |
+| 多模态影像 | `糖尿病视网膜病变有哪些影像示例` | RetinaMNIST+ 影像候选与预览 |
+
+也可以尝试英文等价问法，例如 `what are symptoms of diabetes`、`ICD code for hypertension`、`show retina images of diabetic retinopathy`。药物、副作用、参考范围、数据集或拆分检索属于受支持意图；如果当前图谱没有相应实体或存在歧义，系统会返回 `not_found` 或澄清候选，而不会编造医学事实。
+
 ## 报告与交付材料
 
 - `docs/report_inputs.md`：固定报告输入材料（版本、统计、来源、案例与路径）
 - `docs/cases/demo_cases.json`：5 个固定案例（含证据字段）
-- `docs/screenshots/demo_*.png`：演示截图
+- `docs/screenshots/demo_*.png`：本地生成的演示截图（默认被 Git 忽略）
 - `deliverables/diabetes_mmkgqa_deliverables.zip`：最终交付包及清单
 
 ## 网页截图与功能演示
 
-以下截图均来自仓库内置素材，可直接用于 README 与汇报材料：
+README 展示图已重新生成并放入 `docs/assets/readme/`。该目录用于保存随说明文档展示的稳定截图，不在当前 `.gitignore` 忽略规则中；`docs/screenshots/` 仍保留为 CLI/demo/视觉验证的本地临时截图目录，默认不随 Git 跟踪。
 
-- DEMO-001：问答歧义澄清  
-  ![DEMO-001](docs/screenshots/demo_001.png)
+### 项目工作台
 
-- DEMO-002：指令冲突与歧义提示  
-  ![DEMO-002](docs/screenshots/demo_002.png)
+| QA 工作台：英文问题命中图像检索意图，返回 evidence/source/kg_version/safety_notice | 图谱总览：默认打开 A/B/C 分层医学知识图谱 |
+|---|---|
+| ![QA 工作台展示结构化回答、实体笔记、证据与影像结果](docs/assets/readme/readme-qa.png) | ![Graph Explorer 默认总览展示医学知识图谱节点和关系](docs/assets/readme/readme-graph-overview.png) |
 
-- DEMO-003：ICD 查找流程  
-  ![DEMO-003](docs/screenshots/demo_003.png)
+### 图谱交互
 
-- DEMO-004：邻域图查询结果  
-  ![DEMO-004](docs/screenshots/demo_004.png)
+| 节点聚焦：点击实体后高亮邻居并打开右侧实体笔记 | 关系路径：点击关系后展示 head/tail、evidence、source 和 provenance |
+|---|---|
+| ![图谱节点聚焦模式展示实体笔记和邻接关系](docs/assets/readme/readme-graph-focus.png) | ![图谱关系路径模式展示选中关系和证据来源](docs/assets/readme/readme-graph-path.png) |
 
-- DEMO-005：KG 统计概览  
-  ![DEMO-005](docs/screenshots/demo_005.png)
+### 多模态与统计
 
-- Web 端桌面视图  
-  ![Desktop UI](artifacts/screenshots/ui-desktop.png)
+| 影像检索：从本地 MedMNIST npz 生成真实 PNG 预览 | 图谱统计：展示节点、边、影像节点、证据关系和质量门 |
+|---|---|
+| ![医学影像检索展示胸片和眼底图像预览卡片](docs/assets/readme/readme-images.png) | ![图谱统计展示节点总数、边总数、影像节点和质量门](docs/assets/readme/readme-stats.png) |
 
-- Web 端移动视图  
-  ![Mobile UI](artifacts/screenshots/ui-mobile.png)
+### 响应式图谱
 
-### 如何更新截图
+| 窄屏视口下的 Graph Explorer |
+|---|
+| ![移动端宽度下滚动到图谱画布后的 Graph Explorer](docs/assets/readme/readme-mobile-graph.png) |
 
-1. 先确保 `make demo` 已执行并且 `make up` 已启动服务。
-2. 重新运行 `make demo` 即可刷新 `docs/cases/demo_cases.json` 与 `docs/screenshots/demo_*.png`。
-3. 如需更新 `artifacts/screenshots/ui-*.png`，在浏览器打开 `http://127.0.0.1:8000/ui` 后手工截图并覆盖文件。
+Graph Explorer 入口：`http://127.0.0.1:8000/ui?tab=graph`。如果你使用了自定义端口，请把 URL 中的端口同步替换，例如 `http://127.0.0.1:8012/ui?tab=graph`。使用说明见 [图谱工作台使用指南](docs/graph_workspace_guide.md)。
+
+### 如何更新 README 展示图
+
+1. 启动 Web 服务：`.\scripts\start.ps1 -SkipData -SkipKg -SkipLoad -NoBrowser`。
+2. 访问 `/health`、`/ui`、`/ui?tab=graph`，确认服务可用后再截图。
+3. 重新生成 README 展示图：
+
+```powershell
+node .\scripts\capture_readme_screenshots.mjs --base-url http://127.0.0.1:8000 --out-dir docs/assets/readme
+```
+
+4. CLI 演示截图可通过 `python -m diabetes_mmkgqa_starter.cli demo --repo-root . --demo-screenshot-dir docs/screenshots` 刷新。
+5. 因 `docs/screenshots/` 默认被忽略，若课程提交需要把演示截图放入交付包，请确认打包流程或显式收集这些本地产物。
 
 ## 项目边界（必须遵守）
 

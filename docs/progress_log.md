@@ -1527,3 +1527,155 @@ Blockers:
 Next:
 
 - 进入目标收官阶段：如需继续提高可观测性，可将完成验收清单外置为 `scripts/verify_project_completion.py` 并加入 `run.ps1 verify` 快捷路径。
+
+## 2026-06-25 - Obsidian-style KGQA workspace repair (UI-004)
+
+Task:
+
+- 将 `/ui` 回补为 Obsidian-inspired 医学知识图谱工作台：英文演示问句可答、图谱首屏可见、影像检索显示真实预览，并新增中文说明文档。
+
+Commands run:
+
+- `.\.venv\Scripts\python.exe -m pip install --disable-pip-version-check httpx==0.27.2`
+- `.\.venv\Scripts\python.exe -m pytest tests/test_qa_service.py tests/test_api_endpoints.py -q`
+- `node --check frontend\app.js`
+- `.\scripts\run.ps1 verify`
+- `.\scripts\start.ps1 -Port 8010 -SkipData -SkipKg -SkipLoad -NoBrowser`
+- API smoke checks for `/qa`, `/graph/overview`, `/images/search`, and `/images/{image_id}/preview.png`
+- Headless Chrome visual/DOM checks for `/ui?tab=graph`, `/ui?tab=images`, and QA demo click flow
+
+Result:
+
+- `show retina images of diabetic retinopathy` 返回 `status=ok`、`intent=image_examples_by_disease`、20 张影像候选。
+- `/graph/overview` 返回非空概览图谱；Graph 页面确认 32 个节点、28 条边可见。
+- `/images/search` 默认返回影像样例，PNG preview 返回 `image/png`，移动视口显示真实缩略图。
+- QA 页面结构化展示答案、影像卡片、KG version、安全提示，并从 rows/images 汇总 evidence/source 摘要。
+- `pytest` 定向用例通过：`11 passed`。
+- `run.ps1 verify` 通过：`48 passed`，portable backend health 为 `nodes=7511`, `edges=29852`, `images=7456`。
+- 新增 `docs/graph_workspace_guide.md` 和 `docs/frontend_vendor.md`，README 已加入说明入口。
+
+Blockers:
+
+- 无新增阻塞。端口 `8000` 已被本机其他 Python 进程占用，本轮验证服务使用 `8010`。
+
+Next:
+
+- 后续若需要报告截图，可基于已验证页面重新采集 `/ui?tab=graph` 与 QA/Images 截图并更新报告输入。
+
+## 2026-06-25 - Graph Explorer visual hierarchy and interaction refinement (UI-005)
+
+Task:
+
+- 将 Graph Explorer 从可用的调试式力导向图升级为低噪声、图谱优先、Obsidian-inspired 的医学知识图谱浏览体验。
+
+Design and workflow notes:
+
+- 使用过 Product Design / Build Web Apps 相关工作流说明，并保持原生 HTML/CSS/JS + 本地 D3 7.9.0 技术栈。
+- Browser 插件/Node REPL 控制工具在当前工具集中不可用；本轮使用本机 Chrome headless + DevTools Protocol 作为浏览器验证 fallback。
+- 参考 Obsidian 官方 Graph View 帮助中的节点/连线、hover 高亮、点击打开、缩放拖拽、筛选、颜色组、外观、力参数和局部图深度模式，但未复制 Obsidian 品牌资产或界面。
+
+Changes:
+
+- 新增 Graph Explorer 视觉 token：深灰背景、低对比边框、灰阶节点、低饱和 A/B/C 层描边、焦点/邻居/路径/淡出关系色。
+- 重构 Graph 控制区：常用控制保留中心实体、A/B/C chips、影像节点、深度、适配、重置；节点上限、箭头、证据节点、节点大小、连线粗细、标签密度、文本透明度和力参数收进默认折叠的高级设置。
+- D3 渲染改为分组节点：普通医学实体圆形、Image 圆角方形、Guideline/StandardRule/DiagnosticThreshold/ReferenceRange/ICD_Code 菱形；EvidenceChunk 默认隐藏。
+- 标签策略改为重要性阈值 + 碰撞降级：默认 120 节点场景下只保留约 15 个持续标签，悬停/选中/搜索/路径临时提高相关标签优先级。
+- 点击节点进入焦点模式：当前节点高亮、一跳邻居中高亮、两跳邻居保留中等亮度、无关节点淡出；点击空白或 Escape 恢复。
+- 点击关系进入路径详情：只高亮当前关系并在右侧显示真实 head/tail、relation、evidence、source、extraction_method、confidence、kg_version；缺字段时显示“当前图谱记录中没有该字段。”
+- 修复快速层级筛选的并发响应覆盖问题：Graph 请求使用递增 request id，只应用最后一次响应。
+- fit view 使用稳定确定性初始布局，同步收敛后停止初始 simulation，并在桌面画布中达到约 71.4% × 78.1% 的默认占比。
+- 新增空 favicon 声明，避免浏览器默认 `/favicon.ico` 404 噪音。
+
+Commands run:
+
+- `node --check frontend\\app.js`
+- `.\\.venv\\Scripts\\python.exe -m pytest tests/test_frontend_graph_ui.py tests/test_api_endpoints.py -q`
+- Headless Chrome DevTools screenshot validation for `/ui?tab=graph`
+- `.\\.venv\\Scripts\\python.exe -m pytest tests -q`
+- `.\\scripts\\run.ps1 verify`
+
+Results:
+
+- `node --check` 通过。
+- 定向测试通过：`7 passed`，仅有既有 Starlette `allow_redirects` 弃用警告。
+- 全量测试通过：`50 passed`，同一 Starlette 弃用警告。
+- `run.ps1 verify` 通过：fallback 路径完成 50 项测试，并加载 portable backend（nodes=7511, edges=29852, images=7456）。
+- Headless Chrome 验证通过：默认图谱 30 个渲染节点、25 条渲染关系、15 个持续标签；高级设置默认折叠；焦点状态 1 个 selected 节点；路径状态 1 条 selected link 和 1 个 edge label；B-only 筛选 7 个节点且 `nonB=0`；390px 窄屏图谱可见；浏览器错误、Runtime exception、Log error 均为 0。
+
+Screenshots:
+
+- `docs/screenshots/graph-default-dark.png`
+- `docs/screenshots/graph-node-focused.png`
+- `docs/screenshots/graph-path-highlighted.png`
+- `docs/screenshots/graph-layer-filter.png`
+- `docs/screenshots/graph-responsive.png`
+
+Task status change:
+
+- `UI-005` 从 `IN_PROGRESS` 标记为 `DONE`。
+
+Blockers:
+
+- 无。
+
+## 2026-06-25 - README visual screenshot gallery refresh
+
+Task:
+
+- 用户指出 README 中截图缺失；重新确认 Web 服务可启动，并把 README 展示图从被忽略的 `docs/screenshots/` 临时目录迁移为可跟踪的 `docs/assets/readme/` 展示资产。
+
+Changes:
+
+- 新增 `docs/assets/readme/readme-qa.png`、`readme-graph-overview.png`、`readme-graph-focus.png`、`readme-graph-path.png`、`readme-images.png`、`readme-stats.png`、`readme-mobile-graph.png`。
+- 新增 `scripts/capture_readme_screenshots.mjs`，从运行中的 `/ui` 自动生成 README 同名截图。
+- README 的“网页截图与功能演示”恢复为图片展廊，并说明 `docs/screenshots/` 仍是默认忽略的本地验证产物。
+
+Commands run:
+
+- `.\\scripts\\start.ps1 -Port 8014 -SkipData -SkipKg -SkipLoad -NoBrowser -HealthTimeoutSec 45`
+- `Invoke-RestMethod http://127.0.0.1:8014/health`
+- `Invoke-RestMethod http://127.0.0.1:8014/graph/overview?limit=80&include_images=false`
+- Headless Chrome DevTools screenshot capture for `/ui`, `/ui?tab=graph`, `/ui?tab=images`, and `/ui?tab=stats`
+
+Results:
+
+- 临时端口 `8014` 启动成功，`/health` 返回 `status=ready`、`backend_ready=True`、`backend=portable`。
+- portable graph summary 为 `nodes=7511`、`edges=29852`、`images=7456`。
+- `/graph/overview?limit=80&include_images=false` 返回 `nodes=32`、`edges=28`。
+- 7 张 README 展示图生成成功，浏览器 Runtime exception 和 Log error 均为 0。
+
+Blockers:
+
+- 无。
+
+Remaining risks:
+
+- 目前仍是 SVG/D3 渲染，默认受控在 80-120 节点体验最佳；如果后续要展示更大局部图，可能需要 canvas/WebGL 或更强的采样策略。
+- 移动端为了保留完整控制能力，Graph 控制区高度较高；截图通过滚动到画布验证，后续可继续压缩移动端工具栏。
+
+## 2026-06-25 - Web startup recheck and README screenshot notes
+
+Task:
+
+- 复核 Web 服务能否在当前仓库状态下启动，并修正 README 中对截图工件的描述，避免把被 `.gitignore` 忽略的本地截图误写成已随仓库提交的内置素材。
+
+Commands run:
+
+- `.\\scripts\\start.ps1 -Port 8012 -SkipData -SkipKg -SkipLoad -NoBrowser -HealthTimeoutSec 40`
+- `Invoke-RestMethod http://127.0.0.1:8012/health`
+- `Invoke-WebRequest http://127.0.0.1:8012/ui`
+- `Invoke-WebRequest http://127.0.0.1:8012/ui?tab=graph`
+- `Invoke-RestMethod http://127.0.0.1:8012/graph/overview?limit=80&include_images=false`
+
+Results:
+
+- 临时端口 `8012` 启动成功，健康检查 passed，复核后已停止该临时进程。
+- `/health` 返回 `status=ready`、`backend_ready=True`、`backend=portable`。
+- portable graph summary 为 `nodes=7511`、`edges=29852`、`images=7456`。
+- `/ui` 和 `/ui?tab=graph` 均返回 `200`。
+- `/graph/overview?limit=80&include_images=false` 返回 `nodes=32`、`edges=28`。
+- README 已更新：明确 `docs/screenshots/` 是本地生成且默认被忽略的验证工件，并提供 Web 启动复核与截图刷新流程。
+
+Blockers:
+
+- 无。

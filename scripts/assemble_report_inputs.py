@@ -1,4 +1,4 @@
-"""Assemble reproducible report input artifacts for the project handoff."""
+"""Assemble reproducible report inputs for the diabetes multimodal KGQA project."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Any
 
 try:
     import yaml
-except Exception:  # pragma: no cover - yaml fallback for environments without runtime dependency
+except Exception:  # pragma: no cover
     yaml = None
 
 
@@ -30,30 +30,37 @@ def _read_manifest(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
-def _render_markdown(stats: dict[str, Any], manifest: dict[str, Any], demo: dict[str, Any] | None, output_path: Path) -> str:
-    safety_notice = "课程演示、非临床诊断"
+def _render_markdown(
+    stats: dict[str, Any],
+    manifest: dict[str, Any],
+    demo: dict[str, Any] | None,
+) -> str:
+    safety_notice = "Educational non-clinical notice (for teaching demonstration only)."
     layer_counts = stats.get("layered_statistics", {}).get("layer_counts", {})
     layer_breakdown = stats.get("layered_statistics", {}).get("layer_breakdown", {})
+    warnings = stats.get("warnings", [])
 
     lines = [
         "# Report Inputs",
         "",
-        f"- 生成时间：{datetime.now(timezone.utc).isoformat()}",
-        f"- 数据版本：{stats.get('kg_version', 'unknown')}",
-        f"- 根证据：所有医学问答与 API 响应均要求返回 evidence/source/kg_version/safety_notice。",
-        f"- 安全声明：{safety_notice}",
+        f"- generation_time: {datetime.now(timezone.utc).isoformat()}",
+        f"- data_version: {stats.get('kg_version', 'unknown')}",
+        "- reproducibility: All outputs can be regenerated from the listed commands and checked config versions.",
+        "- evidence_contract: evidence/source/kg_version/safety_notice",
+        "- safety_notice: " + safety_notice,
         "",
-        "## 快速命令",
+        "## Reproducible commands",
         "",
         "```bash",
-        "python -m diabetes_mmkgqa_starter.cli --repo-root . data",
-        "python -m diabetes_mmkgqa_starter.cli --repo-root . kg --skip-retina --skip-pneumonia",
-        "python -m diabetes_mmkgqa_starter.cli --repo-root . load --backend portable --output-dir data/processed --ontology-path configs/ontology.yaml",
-        "python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json --no-demo-screenshots",
-        "python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json --output docs/report_inputs.md",
+        "python -m diabetes_mmkgqa_starter.cli data --repo-root .",
+        "python -m diabetes_mmkgqa_starter.cli kg --repo-root .",
+        "python -m diabetes_mmkgqa_starter.cli load --backend portable --repo-root . --output-dir data/processed --ontology-path configs/ontology.yaml",
+        "python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json",
+        "python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json --manifest-path data/source_manifest.yaml --demo-path docs/cases/demo_cases.json --output docs/report_inputs.md",
+        "python -m diabetes_mmkgqa_starter.cli package --repo-root . --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip",
         "```",
         "",
-        "## 统计指标（来自 stats.json）",
+        "## Stats summary (from data/processed/stats.json)",
         "",
         f"- canonical_entity_count: {stats.get('canonical_entity_count', 0)}",
         f"- unique_semantic_triples_count: {stats.get('unique_semantic_triples_count', 0)}",
@@ -63,30 +70,39 @@ def _render_markdown(stats: dict[str, Any], manifest: dict[str, Any], demo: dict
         f"- image_node_count: {stats.get('image_node_count', 0)}",
         f"- node_count: {stats.get('node_count', 0)}",
         f"- edge_count: {stats.get('edge_count', 0)}",
-        "",
         f"- A/B/C Layered Nodes: A={layer_counts.get('node', {}).get('A', 0)} / B={layer_counts.get('node', {}).get('B', 0)} / C={layer_counts.get('node', {}).get('C', 0)}",
         f"- A/B/C Layered Edges: A={layer_counts.get('edge', {}).get('A', 0)} / B={layer_counts.get('edge', {}).get('B', 0)} / C={layer_counts.get('edge', {}).get('C', 0)}",
         "",
     ]
 
+    if warnings:
+        lines.extend(["### Warnings", ""])
+        for item in warnings:
+            lines.append(f"- {item}")
+        lines.append("")
+
     if layer_breakdown:
         lines.extend(
             [
-                "### 层内细分",
+                "### Layer detail (C layer)",
                 "",
-                f"- B层 Guideline 数：{layer_breakdown.get('B', {}).get('guideline_count', 0)}",
-                f"- B层 ICD_Code 数：{layer_breakdown.get('B', {}).get('icd_code_count', 0)}",
-                f"- B层 StandardRule 数：{layer_breakdown.get('B', {}).get('standard_rule_count', 0)}",
-                f"- C层 Disease 数：{layer_breakdown.get('C', {}).get('disease_count', 0)}",
-                f"- C层 图像边数：{layer_breakdown.get('C', {}).get('multimodal_edge_count', 0)}",
+                f"- C-layer disease nodes: {layer_breakdown.get('C', {}).get('disease_count', 0)}",
+                f"- C-layer image nodes: {layer_breakdown.get('C', {}).get('image_node_count', 0)}",
+                f"- C-layer multimodal edge count: {layer_breakdown.get('C', {}).get('multimodal_edge_count', 0)}",
                 "",
             ]
         )
 
     sources = manifest.get("sources", []) if isinstance(manifest.get("sources"), list) else []
     if sources:
-        lines.extend(["## 数据源清单（from source_manifest）", "", "| source_id | root_file | checksum | license_or_terms |"])
-        lines.append("|---|---|---|---|")
+        lines.extend(
+            [
+                "## Source manifest",
+                "",
+                "| source_id | root_file | checksum | license_or_terms |",
+                "|---|---|---|---|",
+            ]
+        )
         for source in sources:
             lines.append(
                 "| "
@@ -99,31 +115,35 @@ def _render_markdown(stats: dict[str, Any], manifest: dict[str, Any], demo: dict
 
     lines.extend(["## Demo cases", ""])
     if demo and demo.get("cases"):
-        lines.append(f"- case_count: {demo.get('case_count', len(demo.get('cases', [])))}")
+        cases = demo.get("cases", [])
+        lines.append(f"- case_count: {demo.get('case_count', len(cases))}")
         lines.append("- cases:")
-        for case in demo["cases"]:
-            lines.append(
-                textwrap.indent(
-                    f"- `{case.get('case_id', '')}` {case.get('title', '')} "
-                    f"({case.get('status', '')})",
-                    "  ",
-                )
+        for case in cases:
+            line = textwrap.indent(
+                f"- `{case.get('case_id', '')}` {case.get('title', '')} ({case.get('status', '')})",
+                "  ",
             )
-            if case.get("screenshot"):
-                lines.append(textwrap.indent(f"screenshot: {case['screenshot'].get('path')}", "    "))
+            lines.append(line)
+            screenshot = case.get("screenshot")
+            if isinstance(screenshot, dict):
+                status = screenshot.get("status", "")
+                path = screenshot.get("path")
+                lines.append(textwrap.indent(f"screenshot: {status} {path or ''}".rstrip(), "    "))
     else:
-        lines.append("- 未检测到演示案例输出；执行命令见上文 `cli demo`。")
+        lines.append("- demo cases were not found in docs/cases/demo_cases.json")
 
     lines.extend(
         [
             "",
-            "## 交付材料",
+            "## Deliverables",
             "",
-            "- `data/processed/stats.json`（本次报告统计）",
-            "- `data/processed/nodes.csv` / `edges.csv`（图谱主文件）",
-            "- `data/processed/schema.json`（Schema 校验结果）",
-            "- `docs/cases/demo_cases.json`（固定 demo 输入与输出）",
-            "- `docs/screenshots/`（演示截图，若环境支持可生成）",
+            "- data/processed/stats.json",
+            "- data/processed/nodes.csv",
+            "- data/processed/edges.csv",
+            "- data/processed/schema.json",
+            "- docs/cases/demo_cases.json",
+            "- docs/screenshots/ (ui_qa.png, ui_image.png, ui_stats.png, demo_001.png ... demo_005.png)",
+            "- deliverables/diabetes_mmkgqa_deliverables.zip",
             "",
         ]
     )
@@ -150,7 +170,7 @@ def main(argv: list[str] | None = None) -> int:
     manifest = _read_manifest(manifest_path)
     demo = _read_json(demo_path) if demo_path.exists() else None
 
-    output_path.write_text(_render_markdown(stats, manifest, demo, output_path), encoding="utf-8")
+    output_path.write_text(_render_markdown(stats, manifest, demo), encoding="utf-8")
     print(f"[report] wrote {output_path}")
     return 0
 

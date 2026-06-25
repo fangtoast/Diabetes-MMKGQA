@@ -1,22 +1,26 @@
-# Case XX — 标题
+﻿# Case Template
 
-## 固定输入
+## Case Metadata
+
+- case_id:
+- kg_version:
+- command:
+
+## 输入
+
 - question:
 - optional image_id:
 
-## 前置条件
-- kg_version:
-- dataset_version:
-- command:
+## 期望执行与对齐
 
-## 期望结果
 - intent:
 - linked entities:
 - expected relations/nodes:
 - required evidence:
 - required images:
 
-## 实际结果
+## 结果记录
+
 - trace_id:
 - response JSON path:
 - screenshot path:

@@ -1,43 +1,42 @@
 # Report Inputs
 
-- 生成时间：2026-06-24T19:19:11.221414+00:00
-- 数据版本：0.2.0
-- 根证据：所有医学问答与 API 响应均要求返回 evidence/source/kg_version/safety_notice。
-- 安全声明：课程演示、非临床诊断
+- generation_time: 2026-06-25T04:50:47.533231+00:00
+- data_version: 0.2.0
+- reproducibility: All outputs can be regenerated from the listed commands and checked config versions.
+- evidence_contract: evidence/source/kg_version/safety_notice
+- safety_notice: Educational non-clinical notice (for teaching demonstration only).
 
-## 快速命令
+## Reproducible commands
 
 ```bash
-python -m diabetes_mmkgqa_starter.cli --repo-root . data
-python -m diabetes_mmkgqa_starter.cli --repo-root . kg --skip-retina --skip-pneumonia
-python -m diabetes_mmkgqa_starter.cli --repo-root . load --backend portable --output-dir data/processed --ontology-path configs/ontology.yaml
-python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json --no-demo-screenshots
-python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json --output docs/report_inputs.md
+python -m diabetes_mmkgqa_starter.cli data --repo-root .
+python -m diabetes_mmkgqa_starter.cli kg --repo-root .
+python -m diabetes_mmkgqa_starter.cli load --backend portable --repo-root . --output-dir data/processed --ontology-path configs/ontology.yaml
+python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json
+python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json --manifest-path data/source_manifest.yaml --demo-path docs/cases/demo_cases.json --output docs/report_inputs.md
+python -m diabetes_mmkgqa_starter.cli package --repo-root . --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip
 ```
 
-## 统计指标（来自 stats.json）
+## Stats summary (from data/processed/stats.json)
 
-- canonical_entity_count: 36
-- unique_semantic_triples_count: 28
-- evidence_backed_relation_claim_count: 5
+- canonical_entity_count: 7507
+- unique_semantic_triples_count: 29852
+- evidence_backed_relation_claim_count: 29829
 - provenance_edge_count: 3
-- image_metadata_count: 0
-- image_node_count: 0
-- node_count: 40
-- edge_count: 28
+- image_metadata_count: 7456
+- image_node_count: 7456
+- node_count: 7511
+- edge_count: 29852
+- A/B/C Layered Nodes: A=9 / B=18 / C=7484
+- A/B/C Layered Edges: A=6 / B=19 / C=29827
 
-- A/B/C Layered Nodes: A=9 / B=18 / C=13
-- A/B/C Layered Edges: A=6 / B=19 / C=3
+### Layer detail (C layer)
 
-### 层内细分
+- C-layer disease nodes: 9
+- C-layer image nodes: 7456
+- C-layer multimodal edge count: 29824
 
-- B层 Guideline 数：3
-- B层 ICD_Code 数：3
-- B层 StandardRule 数：7
-- C层 Disease 数：8
-- C层 图像边数：0
-
-## 数据源清单（from source_manifest）
+## Source manifest
 
 | source_id | root_file | checksum | license_or_terms |
 |---|---|---|---|
@@ -56,20 +55,22 @@ python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json 
 - case_count: 5
 - cases:
   - `DEMO-001` Disease ambiguity clarification (clarification)
-    screenshot: docs\screenshots\demo_001.png
+    screenshot: captured docs\screenshots\demo_001.png
   - `DEMO-002` Guideline ambiguity clarification (clarification)
-    screenshot: docs\screenshots\demo_002.png
+    screenshot: captured docs\screenshots\demo_002.png
   - `DEMO-003` ICD clarification (clarification)
-    screenshot: docs\screenshots\demo_003.png
+    screenshot: captured docs\screenshots\demo_003.png
   - `DEMO-004` Graph neighborhood check (ok)
-    screenshot: docs\screenshots\demo_004.png
+    screenshot: captured docs\screenshots\demo_004.png
   - `DEMO-005` Statistics snapshot (ok)
-    screenshot: docs\screenshots\demo_005.png
+    screenshot: captured docs\screenshots\demo_005.png
 
-## 交付材料
+## Deliverables
 
-- `data/processed/stats.json`（本次报告统计）
-- `data/processed/nodes.csv` / `edges.csv`（图谱主文件）
-- `data/processed/schema.json`（Schema 校验结果）
-- `docs/cases/demo_cases.json`（固定 demo 输入与输出）
-- `docs/screenshots/`（演示截图，若环境支持可生成）
+- data/processed/stats.json
+- data/processed/nodes.csv
+- data/processed/edges.csv
+- data/processed/schema.json
+- docs/cases/demo_cases.json
+- docs/screenshots/ (ui_qa.png, ui_image.png, ui_stats.png, demo_001.png ... demo_005.png)
+- deliverables/diabetes_mmkgqa_deliverables.zip

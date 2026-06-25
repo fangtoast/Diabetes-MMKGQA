@@ -85,6 +85,77 @@ class QAService:
         "xray",
         "x-ray",
     }
+    CHINESE_QUERY_FILLERS = (
+        "需要做哪些",
+        "有哪些",
+        "是什么",
+        "请问",
+        "查询",
+        "展示",
+        "显示",
+        "相关",
+        "需要做",
+        "建议",
+        "症状",
+        "表现",
+        "检查项",
+        "检查",
+        "检验",
+        "用药剂量",
+        "用药频次",
+        "用药",
+        "药物治疗",
+        "药物",
+        "不良反应",
+        "副作用",
+        "用法",
+        "用量",
+        "剂量",
+        "给药频率",
+        "持续时间",
+        "影响部位",
+        "解剖",
+        "分类",
+        "疾病类型",
+        "指南",
+        "依据",
+        "icd编码",
+        "诊断码",
+        "编码",
+        "参考范围",
+        "正常范围",
+        "诊断阈值",
+        "分界值",
+        "分期",
+        "阶段",
+        "病程分期",
+        "分级",
+        "影像示例",
+        "相关图片",
+        "图像展示",
+        "图片分级",
+        "影像分级",
+        "数据集图片",
+        "影像数据集",
+        "数据集",
+        "训练集",
+        "验证集",
+        "测试集",
+        "数据拆分",
+        "病例",
+        "示例病例",
+        "临床案例",
+        "示例样本",
+        "图像",
+        "影像",
+        "图片",
+        "什么",
+        "哪些",
+        "多少",
+        "请",
+        "的",
+        "吗",
+    )
 
     def __init__(
         self,
@@ -114,6 +185,7 @@ class QAService:
                 metadata={"candidates": []},
             )
 
+        candidates = self._narrow_supported_candidates(intent_match, candidates)
         if len(candidates) > 1:
             ranked = [self._expose_candidate(row) for row in candidates]
             evidence_ids: list[str] = []
@@ -227,12 +299,39 @@ class QAService:
         if nodes:
             return nodes[: self.router.fallback_max_rows]
 
+        embedded = self._embedded_entity_candidates(question, intent_match.intent.entity_types)
+        if embedded:
+            return embedded[: self.router.fallback_max_rows]
+
         fallback_query = query_candidates[0]
         return self.backend.search_entities(
             fallback_query,
             node_types=None,
             limit=self.router.fallback_max_rows,
         )
+
+    def _narrow_supported_candidates(self, intent_match: IntentMatch, candidates: list[dict]) -> list[dict]:
+        if len(candidates) <= 1:
+            return candidates
+
+        supported: list[dict] = []
+        allowed_relations = tuple(intent_match.intent.relations)
+        for candidate in candidates:
+            node_id = str(candidate.get("node_id", ""))
+            if not node_id:
+                continue
+            try:
+                graph = self.backend.query_subgraph(node_id, max_hops=1)
+            except KeyError:
+                continue
+            rows = self._collect_answers(intent_match, node_id, graph["edges"], allowed_relations)
+            images = self._collect_images(intent_match, candidate)
+            if rows or images:
+                supported.append(candidate)
+
+        if len(supported) == 1:
+            return supported
+        return candidates
 
     def _search_by_type(self, query: str, intent_types: list[str]) -> list[dict]:
         if not query:
@@ -255,7 +354,11 @@ class QAService:
     def _candidate_search_queries(self, question: str, trigger: str) -> list[str]:
         normalized_question = self._normalize_text(question)
         normalized_trigger = self._normalize_text(trigger)
-        tokens = re.findall(r"[0-9a-zA-Z\u4e00-\u9fff]+", normalized_question)
+        without_trigger = normalized_question
+        if normalized_trigger:
+            without_trigger = without_trigger.replace(normalized_trigger, " ")
+        stripped_question = self._strip_chinese_question_fillers(without_trigger)
+        tokens = re.findall(r"[0-9a-zA-Z\u4e00-\u9fff]+", stripped_question)
         trigger_tokens = {t for t in re.findall(r"[0-9a-zA-Z\u4e00-\u9fff]+", normalized_trigger)}
 
         content_tokens = [
@@ -268,10 +371,45 @@ class QAService:
             return []
 
         candidates = [" ".join(content_tokens)]
+        if re.search(r"[\u4e00-\u9fff]", stripped_question):
+            candidates.insert(0, "".join(content_tokens))
         for token in content_tokens:
             if token and len(token) >= 2:
                 candidates.append(token)
         return self._dedup_non_empty(candidates)
+
+    def _embedded_entity_candidates(self, question: str, intent_types: list[str]) -> list[dict]:
+        normalized_question = self._normalize_text(question).lower()
+        if not normalized_question:
+            return []
+
+        requested = set(intent_types or [])
+        matches: list[tuple[int, str, dict]] = []
+        seen: set[str] = set()
+        for node_id, row in self.backend.nodes.items():
+            node_type = str(row.get("node_type", ""))
+            if requested and node_type not in requested:
+                continue
+            labels = [
+                str(row.get("canonical_name", "")),
+                str(row.get("node_id", "")),
+                *self._split_values(str(row.get("aliases", ""))),
+                *self._split_values(str(row.get("synonyms", ""))),
+            ]
+            best_label = ""
+            for label in labels:
+                normalized_label = self._normalize_text(label).lower()
+                if len(normalized_label) < 2:
+                    continue
+                if normalized_label in normalized_question:
+                    if len(normalized_label) > len(best_label):
+                        best_label = normalized_label
+            if best_label and node_id not in seen:
+                seen.add(node_id)
+                matches.append((-len(best_label), node_id, row))
+
+        matches.sort(key=lambda item: (item[0], item[1]))
+        return [row for _, _, row in matches]
 
     def _collect_answers(
         self,
@@ -430,6 +568,13 @@ class QAService:
     @staticmethod
     def _normalize_text(value: str) -> str:
         return " ".join((value or "").strip().lower().split())
+
+    @classmethod
+    def _strip_chinese_question_fillers(cls, value: str) -> str:
+        text = value or ""
+        for phrase in cls.CHINESE_QUERY_FILLERS:
+            text = re.sub(re.escape(phrase), " ", text, flags=re.IGNORECASE)
+        return " ".join(text.split())
 
     @staticmethod
     def _dedup_non_empty(items: list[str]) -> list[str]:

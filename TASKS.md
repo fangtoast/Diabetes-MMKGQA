@@ -76,6 +76,9 @@ This ledger is the current TODO source. The long-form roadmap is
 | UI-001 | DONE | Product design brief | Product Design workflow captures target users, screens, safety language, and interaction needs |
 | UI-002 | DONE | Build Web Apps frontend | Frontend is built with the Build Web Apps workflow and exposes QA, graph, image, stats, demo screens |
 | UI-003 | DONE | Frontend visual QA | Rendered screenshots/responsive checks pass or are marked BLOCKED with exact reason |
+| UI-004 | DONE | Obsidian-style KGQA workspace repair | English demo QA, graph overview canvas, image previews, evidence/source display, and guide docs are verified |
+| UI-005 | DONE | Graph Explorer visual hierarchy and interaction refinement | Low-noise graph visual system, controlled labels, focus/path interactions, contextual detail panel, advanced controls, screenshots, and tests are verified |
+| UI-006 | DONE | QA discoverability and image/graph UX repair | Image Retrieval has a bounded scrollable results area for 80 cards, graph node clicks update focus without viewport jumps, Chinese QA examples resolve to evidence-backed answers, and guide docs are updated |
 
 ## Phase 8 - Demo, report, and package
 

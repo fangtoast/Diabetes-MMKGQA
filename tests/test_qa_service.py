@@ -34,6 +34,7 @@ def _build_portable_fixture(processed_dir: Path) -> None:
                 "node_id": "n1",
                 "node_type": "Disease",
                 "canonical_name": "diabetes",
+                "aliases": "糖尿病",
                 "knowledge_layer": "C",
                 "source_ids": "manual",
                 "kg_version": "0.2.0",
@@ -87,7 +88,7 @@ def _build_portable_fixture(processed_dir: Path) -> None:
                 "kg_version": "0.2.0",
             },
         ],
-        fieldnames=["node_id", "node_type", "canonical_name", "knowledge_layer", "source_ids", "kg_version"],
+        fieldnames=["node_id", "node_type", "canonical_name", "aliases", "knowledge_layer", "source_ids", "kg_version"],
     )
 
     _write_csv(
@@ -281,6 +282,35 @@ def test_qa_service_a_layer_symptom_question_has_evidence_and_metadata(tmp_path:
     assert result["metadata"]["image_count"] == 0
 
 
+def test_qa_service_links_chinese_natural_question_to_entity(tmp_path: Path):
+    backend, intents_path = _build_backend_with_contract(tmp_path)
+    _write_intent_contract(
+        intents_path,
+        {
+            "intents": [
+                {
+                    "name": "disease_symptoms",
+                    "description": "symptoms",
+                    "entity_types": ["Disease"],
+                    "relations": ["HAS_SYMPTOM"],
+                    "triggers": ["症状", "有哪些症状"],
+                }
+            ],
+            "fallback": {"max_rows": 20, "max_hops": 2},
+        },
+    )
+
+    service = QAService(backend=backend, intents_path=intents_path)
+    result = service.ask("糖尿病有哪些症状")
+
+    assert result["status"] == "ok"
+    assert result["intent"] == "disease_symptoms"
+    assert result["entity"]["canonical_name"] == "diabetes"
+    assert len(result["rows"]) == 2
+    assert result["metadata"]["query_template"]["read_only"] is True
+    assert "课程演示、非临床诊断" in result["safety_notice"]
+
+
 def test_qa_service_ambiguous_entity_returns_clarification(tmp_path: Path):
     processed = tmp_path / "data" / "processed"
     _write_csv(
@@ -389,6 +419,130 @@ def test_qa_service_image_intent_returns_image_candidates(tmp_path: Path):
     assert result["source_ids"] == ["manual", "retina"]
     assert result["evidence_ids"] == ["ev3"]
     assert result["metadata"]["image_count"] == 1
+
+
+def test_qa_service_english_alias_links_chinese_retinopathy_image(tmp_path: Path):
+    processed = tmp_path / "data" / "processed"
+    _write_csv(
+        processed / "nodes.csv",
+        [
+            {
+                "node_id": "d_retina",
+                "node_type": "Disease",
+                "canonical_name": "糖尿病视网膜病变",
+                "knowledge_layer": "C",
+                "source_ids": "retinamnist",
+                "kg_version": "0.2.0",
+            },
+            {
+                "node_id": "i_retina",
+                "node_type": "Image",
+                "canonical_name": "RetinaMNIST+ image train 000000",
+                "knowledge_layer": "C",
+                "source_ids": "retinamnist",
+                "kg_version": "0.2.0",
+            },
+        ],
+        fieldnames=["node_id", "node_type", "canonical_name", "knowledge_layer", "source_ids", "kg_version"],
+    )
+    _write_csv(
+        processed / "edges.csv",
+        [
+            {
+                "head_id": "i_retina",
+                "tail_id": "d_retina",
+                "edge_id": "e_retina",
+                "relation": "IMAGE_ASSOCIATED_WITH",
+                "source_id": "retinamnist",
+                "extraction_method": "retinamnist_parser",
+                "confidence": "1.0",
+                "knowledge_layer": "C",
+                "kg_version": "0.2.0",
+                "evidence_id": "ev_retina",
+                "raw_relation": "IMAGE_ASSOCIATED_WITH",
+                "normalized_relation": "IMAGE_ASSOCIATED_WITH",
+            }
+        ],
+        fieldnames=[
+            "head_id",
+            "tail_id",
+            "edge_id",
+            "relation",
+            "source_id",
+            "extraction_method",
+            "confidence",
+            "knowledge_layer",
+            "kg_version",
+            "evidence_id",
+            "raw_relation",
+            "normalized_relation",
+        ],
+    )
+    _write_csv(
+        processed / "images.csv",
+        [
+            {
+                "image_id": "i_retina",
+                "source_id": "retinamnist",
+                "source_file": "train_images",
+                "image_index": "0",
+                "dataset": "RetinaMNIST+",
+                "split": "train",
+                "grade": "No_DR",
+                "kg_version": "0.2.0",
+            }
+        ],
+        fieldnames=[
+            "image_id",
+            "source_id",
+            "source_file",
+            "image_index",
+            "dataset",
+            "split",
+            "grade",
+            "kg_version",
+        ],
+    )
+    alias_dir = tmp_path / "data" / "raw" / "manual"
+    alias_dir.mkdir(parents=True, exist_ok=True)
+    _write_csv(
+        alias_dir / "aliases.csv",
+        [
+            {
+                "canonical_name": "糖尿病视网膜病变",
+                "alias": "diabetic retinopathy",
+                "node_type": "Disease",
+                "reviewer": "Team",
+                "note": "英文映射",
+            }
+        ],
+        fieldnames=["canonical_name", "alias", "node_type", "reviewer", "note"],
+    )
+    intents_file = tmp_path / "intents.yaml"
+    _write_intent_contract(
+        intents_file,
+        {
+            "intents": [
+                {
+                    "name": "image_examples_by_disease",
+                    "description": "image examples",
+                    "entity_types": ["Disease"],
+                    "relations": ["IMAGE_ASSOCIATED_WITH"],
+                    "triggers": ["show images", "images", "retina"],
+                }
+            ],
+            "fallback": {"max_rows": 20, "max_hops": 2},
+        },
+    )
+
+    service = QAService(backend=PortableGraphBackend.from_dir(processed), intents_path=intents_file)
+    result = service.ask("show retina images of diabetic retinopathy")
+
+    assert result["status"] == "ok"
+    assert result["intent"] == "image_examples_by_disease"
+    assert result["entity"]["canonical_name"] == "糖尿病视网膜病变"
+    assert len(result["images"]) == 1
+    assert result["images"][0]["image_id"] == "i_retina"
 
 
 def test_qa_service_not_found_returns_contract_fields(tmp_path: Path):

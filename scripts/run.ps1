@@ -53,6 +53,20 @@ function Write-Placeholder {
     Write-Host "[run.ps1] $Message" -ForegroundColor Yellow
 }
 
+function Get-ProjectPython {
+    $venvPython = Join-Path (Get-Location) '.venv\Scripts\python.exe'
+    if (Test-Path $venvPython) {
+        return $venvPython
+    }
+
+    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonCommand) {
+        return $pythonCommand.Source
+    }
+
+    return $null
+}
+
 function Invoke-Bootstrap {
     param([switch]$SkipInstall)
     Write-Host '=== bootstrap ===' -ForegroundColor Cyan
@@ -337,23 +351,25 @@ switch ($Command) {
 
     'verify' {
         Invoke-MakeOrFallback -Target 'verify' -FallbackMessage 'make verify unavailable; fallback smoke checks if possible.' -Fallback {
-            if (Get-Command python -ErrorAction SilentlyContinue) {
+            $pythonExe = Get-ProjectPython
+            if ($pythonExe) {
                 Write-Placeholder 'Running lightweight verification smoke checks (scripted path).'
-                $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+                $prevPythonPath = $env:PYTHONPATH
                 try {
-                    python -m pytest tests -q
+                    $env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+                    & $pythonExe -m pytest tests -q
                     if ($LASTEXITCODE -ne 0) {
                         Write-Error "verify test step failed with code $LASTEXITCODE"
                         exit $LASTEXITCODE
                     }
-                    python -m diabetes_mmkgqa_starter.cli load --backend portable --output-dir 'data/processed'
+                    & $pythonExe -m diabetes_mmkgqa_starter.cli load --backend portable --output-dir 'data/processed'
                     if ($LASTEXITCODE -ne 0) {
                         Write-Error "portable load step failed with code $LASTEXITCODE"
                         exit $LASTEXITCODE
                     }
                 }
                 finally {
-                    $env:PYTHONPATH = $null
+                    $env:PYTHONPATH = $prevPythonPath
                 }
             }
             else {

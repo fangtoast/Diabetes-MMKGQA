@@ -1,5 +1,7 @@
 ﻿# raw/pneumoniamnist
 
-存放文件：`pneumoniamnist_224.npz`
+该目录放置 PneumoniaMNIST 根文件：
 
-说明：下载来源与 checksum 在 `data/source_manifest.yaml` 记录。
+- `pneumoniamnist_224.npz`
+
+与 `data/source_manifest.yaml` 约束下载源、checksum 与许可条款。

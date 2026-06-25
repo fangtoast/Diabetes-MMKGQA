@@ -1,46 +1,48 @@
-# Diabetes-MMKGQA
+﻿# README 模板（课程演示版）
 
-## One-command quick start
-```bash
-make bootstrap
-make data
-make kg
-make up
-make load
-make demo
-```
+> 该模板用于快速创建或复核课程仓库 `README.md`，中文为主。
 
-## Knowledge graph statistics
-> This section must be generated from `stats.json`; do not hand-edit numbers.
+## 项目信息
 
-| Metric | Value |
-|---|---:|
-| Canonical entities | AUTO |
-| Unique semantic triples | AUTO |
-| Evidence-backed relation claims | AUTO |
-| Provenance edges | AUTO |
-| Image nodes | AUTO |
-| Total graph edges | AUTO |
-| Entity types | AUTO |
-| Relation types | AUTO |
+- 项目名称：
+- 版本：
+- 项目目标：
+- 非医疗用途声明：
 
-## Entity types
-Generated list from `configs/ontology.yaml` and actual counts.
+## 核心能力
 
-## Relation types
-Generated list with domain, range, direction, and actual counts.
+- 
+- 
+- 
 
-## Local root data and extraction
-Generated from `data/source_manifest.yaml`, including root path, checksum, acquisition, terms, and extractor.
+## 文档入口
 
-## Data lineage
-Raw files are immutable. All outputs can be rebuilt through the Make targets and retain source/evidence identifiers.
+- 项目计划：
+- 架构说明：
+- 任务台账：
+- 规则约束：
 
-## Platform modules
-Describe ingestion, normalization, QC, export, Neo4j, entity linking, intent routing, graph queries, evidence/image retrieval, API, and UI.
+## 快速命令
 
-## Reproduction cases
-Link each fixed case input, JSON response, screenshot, expected nodes/relations, and pass/fail result.
+| 目标 | 命令 | 说明 |
+|---|---|---|
+| bootstrap | `make bootstrap` |  |
+| data | `make data` |  |
+| kg | `make kg` |  |
+| load | `make load` |  |
+| up | `make up` |  |
+| demo | `make demo` |  |
+| report | `make report` |  |
+| verify | `make verify` |  |
+| package | `make package` |  |
 
-## Limitations and safety
-Educational demonstration only. Not for clinical diagnosis or treatment. No patient data is used.
+## 验证清单
+
+- [ ] 安全边界文案已写入
+- [ ] `AGENTS.md` 与 `docs/project_plan.md` 一致
+- [ ] 关键命令可在当前环境执行或有 PowerShell 回退路径
+
+## 风险与说明
+
+- 未经授权数据是否已受控放置：
+- 示例截图/报告是否按生成脚本重建：

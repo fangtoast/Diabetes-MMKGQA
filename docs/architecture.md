@@ -90,8 +90,8 @@ First screen is the real QA/demo workspace (not a marketing landing page).
 Required sections:
 
 - QA workspace
-- Graph explorer
-- Image retrieval
+- Obsidian-style graph explorer with overview graph, local graph, zoom, drag, hover highlight, filters, and node inspector
+- Image retrieval with metadata cards and PNG previews generated from local MedMNIST npz roots
 - Layered statistics
 - Demo cases
 - Safety notice
@@ -101,8 +101,10 @@ Required sections:
 - `GET /health`
 - `POST /qa`
 - `GET /entities/search`
+- `GET /graph/overview`
 - `GET /graph/subgraph`
 - `GET /images/search`
+- `GET /images/{image_id}/preview.png`
 - `GET /stats`
 
 ## 11. Quality gates

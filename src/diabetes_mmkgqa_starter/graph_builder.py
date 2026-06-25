@@ -174,6 +174,37 @@ def _split_source_ids(value: str | list[str] | None) -> set[str]:
     return {item.strip() for item in str(value).split("|") if item.strip()}
 
 
+def _append_pipe_values(existing: str, incoming: Iterable[str]) -> str:
+    values = {item.strip() for item in str(existing or "").split("|") if item.strip()}
+    values.update(item.strip() for item in incoming if item and item.strip())
+    return "|".join(sorted(values))
+
+
+def _attach_aliases_to_nodes(nodes: list[dict], alias_rows: list[dict]) -> list[dict]:
+    aliases_by_node: dict[tuple[str, str], set[str]] = {}
+    for row in alias_rows:
+        key = (
+            str(row.get("node_type", "")).strip(),
+            str(row.get("canonical_name", "")).strip(),
+        )
+        alias = str(row.get("alias", "")).strip()
+        if key[0] and key[1] and alias:
+            aliases_by_node.setdefault(key, set()).add(alias)
+
+    output: list[dict] = []
+    for row in nodes:
+        node = dict(row)
+        key = (
+            str(node.get("node_type", "")).strip(),
+            str(node.get("canonical_name", "")).strip(),
+        )
+        aliases = aliases_by_node.get(key, set())
+        if aliases:
+            node["aliases"] = _append_pipe_values(str(node.get("aliases", "")), aliases)
+        output.append(node)
+    return output
+
+
 def _normalize_records(
     nodes: list[dict],
     edges: list[dict],
@@ -615,6 +646,7 @@ def _build_graph_records(
     )
 
     merged_nodes = _stable_merge_row_lists(all_nodes, key="node_id")
+    merged_nodes = _attach_aliases_to_nodes(merged_nodes, aliases.aliases)
     merged_edges = _stable_merge_row_lists(all_edges, key="edge_id")
     merged_documents = _stable_merge_row_lists(all_documents, key="document_id")
     merged_evidence = _stable_merge_row_lists(all_evidence, key="evidence_id")

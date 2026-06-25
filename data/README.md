@@ -1,19 +1,18 @@
-﻿# data 目录契约
+﻿# 数据目录契约
 
-## 约定
-- 本目录用于三段式可复现数据链路：
-  - `data/raw/`：源数据（root data）
-  - `data/interim/`：解析/规范化中间产物
-  - `data/processed/`：可加载的图谱最终产物
-- 所有目录与文件应可由脚本从前序源头重建。
-- 不得修改已存在的 `data/raw/` 原始文件；若需替换必须更新 manifest 与重放命令。
-- 禁止提交未授权大体积原始数据；只允许提交最小 fixture 与说明文件。
+## 目录用途
 
-## 目录说明
-- `data/raw/` 与 `data/source_manifest.yaml` 一致：
-  - `manual/`：A/B/C 手工表与 aliases 源文件
-  - `diakg/`：DiaKG 主文件与 fixture
-  - `retinamnist/`：RetinaMNIST+ 根数据
-  - `pneumoniamnist/`：PneumoniaMNIST 根数据
-- `data/interim/`：中间结果（仅重算结果与可追溯转换产物）
-- `data/processed/`：最终图谱文件与质检结果（nodes/edges/triples/images/documents/evidence/statistics）
+- `data/raw/`：源数据根目录（只读）
+- `data/interim/`：中间产物（可重建）
+- `data/processed/`：可运行图谱产物与质量统计（可复现）
+
+## 管理规则
+
+- `data/raw/` 一旦入库不可随意修改
+- 所有中间与最终文件必须可通过脚本重建
+- 不提交超大原始文件的不可复现副本
+
+## 命令与检查
+
+- 目录约定由 `TASKS.md` 与相关 parser 文档约束
+- 原始文件路径见 `data/source_manifest.yaml`

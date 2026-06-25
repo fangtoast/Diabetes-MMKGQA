@@ -5,6 +5,7 @@ import csv
 
 import pytest
 import yaml
+import numpy as np
 pytest.importorskip("fastapi", reason="FastAPI is required for API endpoint tests.")
 from fastapi.testclient import TestClient
 
@@ -206,19 +207,40 @@ def _build_api_fixture(tmp_path: Path) -> tuple[Path, Path]:
         [
             {
                 "image_id": "i1",
-                "relative_path": "data/interim/retina/retina_000001.bin",
+                "source_id": "retinamnist",
+                "source_file": "train_images",
+                "image_index": "0",
                 "dataset": "RetinaMNIST+",
                 "split": "train",
                 "grade": "No_DR",
+                "grade_code": "0",
                 "kg_version": "0.2.0",
             }
         ],
-        fieldnames=["image_id", "relative_path", "dataset", "split", "grade", "kg_version"],
+        fieldnames=[
+            "image_id",
+            "source_id",
+            "source_file",
+            "image_index",
+            "dataset",
+            "split",
+            "grade",
+            "grade_code",
+            "kg_version",
+        ],
     )
 
     _write_csv(processed / "documents.csv", [], fieldnames=[])
     _write_csv(processed / "evidence.csv", [], fieldnames=[])
     _write_csv(processed / "triples.tsv", [])
+
+    raw_retina = tmp_path / "data" / "raw" / "retinamnist"
+    raw_retina.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        raw_retina / "retinamnist_224.npz",
+        train_images=np.zeros((1, 4, 4, 3), dtype=np.uint8),
+        train_labels=np.array([[0]], dtype=np.uint8),
+    )
 
     intents_file = tmp_path / "intents.yaml"
     _write_intents(intents_file)
@@ -271,17 +293,50 @@ def test_api_qa_and_search_endpoints(tmp_path: Path):
     assert search_body["items"][0]["canonical_name"] == "diabetes"
     assert "课程演示、非临床诊断" in search_body["safety_notice"]
 
+    legacy_search = client.get("/entities/search", params={"q": "diabetes", "node_types": "Disease", "limit": 10})
+    assert legacy_search.status_code == 200
+    legacy_search_body = legacy_search.json()
+    assert legacy_search_body["count"] == 1
+    assert legacy_search_body["items"][0]["canonical_name"] == "diabetes"
+    assert "课程演示、非临床诊断" in legacy_search_body["safety_notice"]
+
     graph = client.get("/graph/subgraph", params={"center_node_id": "d1", "max_hops": 2})
     assert graph.status_code == 200
     graph_body = graph.json()
     assert graph_body["center_node_id"] == "d1"
     assert graph_body["node_count"] >= 2
 
+    overview = client.get("/graph/overview", params={"limit": 4, "node_types": "Disease,Symptom"})
+    assert overview.status_code == 200
+    overview_body = overview.json()
+    assert overview_body["mode"] == "overview"
+    assert overview_body["node_count"] >= 2
+    assert overview_body["edge_count"] >= 1
+
+    legacy_graph = client.get("/graph/subgraph", params={"node": "d1", "max_hops": 2})
+    assert legacy_graph.status_code == 200
+    legacy_graph_body = legacy_graph.json()
+    assert legacy_graph_body["center_node_id"] == "d1"
+    assert legacy_graph_body["node_count"] >= 2
+
     images = client.get("/images/search", params={"disease_id": "d1", "limit": 5})
     assert images.status_code == 200
     images_body = images.json()
     assert images_body["count"] == 1
     assert images_body["items"][0]["image_id"] == "i1"
+    assert images_body["items"][0]["preview_url"] == "/images/i1/preview.png"
+    assert images_body["images"] == images_body["items"]
+
+    default_images = client.get("/images/search", params={"disease_id": "", "limit": 5})
+    assert default_images.status_code == 200
+    default_images_body = default_images.json()
+    assert default_images_body["count"] == 1
+    assert default_images_body["images"][0]["image_id"] == "i1"
+
+    preview = client.get("/images/i1/preview.png")
+    assert preview.status_code == 200
+    assert preview.headers["content-type"] == "image/png"
+    assert preview.content.startswith(b"\x89PNG")
 
 
 def test_api_images_search_and_stats_require_backend(tmp_path: Path):
