@@ -79,7 +79,33 @@ python -m pip install -e .
 
 > 当前仓库已在本地 `.venv` 中完成一次完整验证：`backend=portable` 可启动、`/health` 正常返回。
 
-### 1）最小可运行链路（任选其一）
+### 1）首次 clone 后准备数据
+
+GitHub 仓库默认不上传大体积第三方 raw 数据文件。原因有三点：普通 GitHub 仓库不适合提交超过 100MB 的单文件，第三方数据仍受各自许可或授权条款约束，且把 raw 数据写入 git 历史会让后续同步和清理都变困难。课程作业的可复现性由“数据来源清单 + 下载脚本 + checksum 校验 + 固定构建命令”保证。
+
+MedMNIST 图像根文件需要在本机下载到 `data/raw/`：
+
+```powershell
+# 查看将要下载/校验的数据、目标路径与 checksum，不写入文件
+python scripts\fetch_medmnist.py --dataset all --dry-run
+
+# 下载 RetinaMNIST+ 与 PneumoniaMNIST 官方 npz，并按 manifest 校验
+python scripts\fetch_medmnist.py --dataset all --download
+
+# 如果已安装 make 以外的 Windows 包装脚本，也可用等价入口
+.\scripts\run.ps1 data --dataset all --download
+```
+
+下载完成后应能看到：
+
+- `data/raw/retinamnist/retinamnist_224.npz`
+- `data/raw/pneumoniamnist/pneumoniamnist_224.npz`
+
+完整 DiaKG 原始语料不随仓库分发；如课程要求使用完整 DiaKG，请按 [data/source_manifest.yaml](data/source_manifest.yaml) 中 `diakg` 的授权说明获取，并放到 `data/raw/diakg/diakg.json`。没有授权文件时，仓库内的 `data/raw/diakg/diakg_fixture.json` 可用于离线联调和课程演示，但不能冒充完整数据集。
+
+如果教师要求离线提交数据，建议不要把 raw 数据提交进 git；可单独提供课程交付包、GitHub Release、学校网盘或移动介质，并附上 `data/source_manifest.yaml` 中的 checksum 与本 README 的下载/校验命令。
+
+### 2）最小可运行链路（任选其一）
 
 #### 方案 1：使用 `make`（有 `make` 时）
 
@@ -109,7 +135,7 @@ make up
 - 健康检查：`http://127.0.0.1:8000/health`
 - API 文档：`http://127.0.0.1:8000/docs`
 
-### 1.5）推荐：一键启动（自动化）
+### 2.5）推荐：一键启动（自动化）
 
 ```powershell
 # 一键启动（默认执行图谱构建+导入+启动 API，并自动打开 UI）
@@ -150,7 +176,7 @@ make up
 
 该复核只验证 Web/API 启动，不重建数据或图谱；如果你修改了数据、解析器或图谱构建逻辑，请先运行 `.\scripts\run.ps1 kg` 与 `.\scripts\run.ps1 verify`。
 
-### 2）快速验收（可复现）
+### 3）快速验收（可复现）
 
 ```powershell
 # 后端可用性
@@ -162,7 +188,7 @@ Invoke-RestMethod -Method Post http://127.0.0.1:8000/qa `
   -Body '{"question":"糖尿病患者常见并发症有哪些？"}'
 ```
 
-### 3）演示与打包（按任务需要执行）
+### 4）演示与打包（按任务需要执行）
 
 ```powershell
 make demo      # 或：.\scripts\run.ps1 demo
@@ -171,18 +197,21 @@ make verify    # 或：.\scripts\run.ps1 verify
 make package   # 或：.\scripts\run.ps1 package
 ```
 
-### 4）真实数据接入状态
+### 5）真实数据接入状态
 
 - [x] 已登记来源与校验规则：`data/source_manifest.yaml`
 - [x] 已提供离线联调备选：`data/raw/diakg/diakg_fixture.json`
-- [x] 已接入真实图像根文件：`data/raw/retinamnist/retinamnist_224.npz`、`data/raw/pneumoniamnist/pneumoniamnist_224.npz`
+- [x] 已提供 MedMNIST 下载与校验脚本：`scripts/fetch_medmnist.py`
+- [x] 本地验证过真实图像根文件路径：`data/raw/retinamnist/retinamnist_224.npz`、`data/raw/pneumoniamnist/pneumoniamnist_224.npz`
 - [x] 图谱产物已统计到真实图像：
   - `image_metadata_count = 7456`
   - `image_node_count = 7456`
   - `warnings = []`
 
-如需重建产物可执行：
-- `python -m diabetes_mmkgqa_starter.cli data --repo-root .`
+新机器或重新 clone 后，请先执行数据下载/校验，再重建产物：
+
+- `python scripts\fetch_medmnist.py --dataset all --download`
+- `python scripts\fetch_medmnist.py --dataset all --dry-run`
 - `python -m diabetes_mmkgqa_starter.cli kg --repo-root .`
 - `python -m diabetes_mmkgqa_starter.cli load --backend portable --repo-root .`
 
