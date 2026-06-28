@@ -971,7 +971,8 @@ body.inspector-collapsed .inspector {
 
 #imagesPanel.panel-view.is-active {
   display: grid;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr);
+  row-gap: 10px;
   height: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -980,7 +981,7 @@ body.inspector-collapsed .inspector {
 .image-results {
   min-height: 0;
   overflow: auto;
-  padding: 2px 6px 12px 0;
+  padding: 4px 6px 14px 0;
   scrollbar-gutter: stable;
 }
 
@@ -994,6 +995,7 @@ body.inspector-collapsed .inspector {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .image-selector-grid {
@@ -1061,6 +1063,13 @@ body.inspector-collapsed .inspector {
   gap: 8px;
   min-height: 30px;
   align-items: center;
+}
+
+#imageStatus.status-line {
+  margin: 0;
+  min-height: 30px;
+  padding: 4px 0 6px;
+  line-height: 1.45;
 }
 
 .filter-empty {

@@ -28,10 +28,11 @@ function Invoke-MakeOrFallback {
     param(
         [string]$Target,
         [ScriptBlock]$Fallback,
-        [string]$FallbackMessage
+        [string]$FallbackMessage,
+        [switch]$PreferFallback
     )
 
-    if (Get-Command make -ErrorAction SilentlyContinue) {
+    if (-not $PreferFallback -and (Get-Command make -ErrorAction SilentlyContinue)) {
         Write-Host "[run.ps1] Running: make $Target" -ForegroundColor Cyan
         & make $Target
         if ($LASTEXITCODE -ne 0) {
@@ -208,7 +209,7 @@ switch ($Command) {
     }
 
     'data' {
-        Invoke-MakeOrFallback -Target 'data' -FallbackMessage 'make data unavailable; placeholder for source validation and root/interim setup.' -Fallback {
+        Invoke-MakeOrFallback -Target 'data' -PreferFallback:($Rest -and $Rest.Count -gt 0) -FallbackMessage 'make data unavailable or arguments were provided; using source validation/download path.' -Fallback {
             if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
                 Write-Error 'python is not available; cannot run MedMNIST data workflow.'
                 exit 1

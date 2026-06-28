@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+import subprocess
 import sys
 import zipfile
 
@@ -54,6 +55,52 @@ def test_cli_load_portable_backend(tmp_path: Path):
 
     code = main(["--repo-root", str(tmp_path), "--output-dir", str(processed), "load", "--backend", "portable"])
     assert code == 0
+
+
+def test_cli_data_command_runs_real_source_checks(tmp_path: Path, monkeypatch):
+    calls: list[tuple[list[str], str]] = []
+
+    def fake_run(command, cwd=None, env=None, check=False):  # noqa: ANN001
+        calls.append((list(command), str(cwd)))
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr("diabetes_mmkgqa_starter.cli.subprocess.run", fake_run)
+
+    code = main(["--repo-root", str(tmp_path), "data"])
+
+    assert code == 0
+    assert len(calls) == 2
+    assert calls[0][1] == str(tmp_path.resolve())
+    assert calls[1][1] == str(tmp_path.resolve())
+    assert calls[0][0][1:] == ["scripts/fetch_medmnist.py", "--dataset", "all", "--dry-run"]
+    assert calls[1][0][1:] == ["scripts/fetch_diakg.py", "--dry-run"]
+
+
+def test_cli_report_command_assembles_report_inputs(tmp_path: Path, monkeypatch):
+    calls: list[tuple[list[str], str]] = []
+
+    def fake_run(command, cwd=None, env=None, check=False):  # noqa: ANN001
+        calls.append((list(command), str(cwd)))
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr("diabetes_mmkgqa_starter.cli.subprocess.run", fake_run)
+
+    code = main(["--repo-root", str(tmp_path), "report"])
+
+    assert code == 0
+    assert len(calls) == 1
+    assert calls[0][1] == str(tmp_path.resolve())
+    assert calls[0][0][1:] == [
+        "scripts/assemble_report_inputs.py",
+        "--stats-path",
+        "data/processed/stats.json",
+        "--manifest-path",
+        "data/source_manifest.yaml",
+        "--demo-path",
+        str(Path("docs/cases") / "demo_cases.json"),
+        "--output",
+        "docs/report_inputs.md",
+    ]
 
 
 def test_cli_package_command_generates_archive_and_excludes_raw(tmp_path: Path):
@@ -126,4 +173,3 @@ def test_cli_package_command_generates_archive_and_excludes_raw(tmp_path: Path):
         names = zf.namelist()
     assert "data/raw/manual/sample.csv" not in names
     assert "package-manifest.json" in names or "package/package-manifest.json" in names
-

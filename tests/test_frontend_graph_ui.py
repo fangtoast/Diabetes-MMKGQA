@@ -54,10 +54,13 @@ def test_image_retrieval_panel_has_scrollable_results_region() -> None:
 
     assert 'id="imageResults"' in html
     assert 'class="image-results"' in html
+    assert 'id="imageStatus"' in html
     assert "#imagesPanel.panel-view.is-active" in css
-    assert "grid-template-rows: auto auto auto auto minmax(0, 1fr)" in css
+    assert "grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr)" in css
+    assert "row-gap: 10px" in css
     assert ".image-results" in css
     assert "overflow: auto" in css
+    assert "#imageStatus.status-line" in css
 
 
 def test_image_retrieval_exposes_preset_filters_and_metadata() -> None:

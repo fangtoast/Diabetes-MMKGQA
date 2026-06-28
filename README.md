@@ -92,7 +92,7 @@ python scripts\fetch_medmnist.py --dataset all --dry-run
 # 下载 RetinaMNIST+ 与 PneumoniaMNIST 官方 npz，并按 manifest 校验
 python scripts\fetch_medmnist.py --dataset all --download
 
-# 如果已安装 make 以外的 Windows 包装脚本，也可用等价入口
+# Windows 推荐使用等价包装入口；默认 dry-run，可追加 --download
 .\scripts\run.ps1 data --dataset all --download
 ```
 
@@ -105,20 +105,9 @@ python scripts\fetch_medmnist.py --dataset all --download
 
 如果教师要求离线提交数据，建议不要把 raw 数据提交进 git；可单独提供课程交付包、GitHub Release、学校网盘或移动介质，并附上 `data/source_manifest.yaml` 中的 checksum 与本 README 的下载/校验命令。
 
-### 2）最小可运行链路（任选其一）
+### 2）最小可运行链路（Windows 推荐）
 
-#### 方案 1：使用 `make`（有 `make` 时）
-
-```powershell
-# bootstrap（校验+初始化）
-make bootstrap
-make data
-make kg
-make load
-make up
-```
-
-#### 方案 2：无 `make` 时使用 PowerShell 包装脚本
+#### 方案 1：PowerShell 包装脚本（推荐）
 
 ```powershell
 .\scripts\run.ps1 bootstrap
@@ -127,6 +116,18 @@ make up
 .\scripts\run.ps1 load
 .\scripts\run.ps1 up
 ```
+
+#### 方案 2：`make`（仅在已安装 GNU Make 时）
+
+```powershell
+make bootstrap
+make data
+make kg
+make load
+make up
+```
+
+当前 Windows 复核环境没有 `make`，因此第一次复现建议优先使用 `scripts/run.ps1` 和 `scripts/start.ps1`。`Makefile` 目标保留为 Linux/macOS 或已配置 GNU Make 环境的等价入口。
 
 服务启动后默认监听 `http://127.0.0.1:8000`。
 
@@ -150,7 +151,7 @@ make up
 ```
 
 默认行为：
-- 顺序执行 `cli data -> kg -> load -> up`（`load` 使用 `portable` 后端）
+- 顺序执行 `cli data -> kg -> load -> up`（`cli data` 执行 MedMNIST 与 DiaKG dry-run 检查，`load` 使用 `portable` 后端）
 - 启动后自动等待 `/health`
 - 成功后自动打开 `http://127.0.0.1:8000/ui`（可加 `-NoBrowser` 关闭）
 
@@ -191,16 +192,22 @@ Invoke-RestMethod -Method Post http://127.0.0.1:8000/qa `
 ### 4）演示与打包（按任务需要执行）
 
 ```powershell
-make demo      # 或：.\scripts\run.ps1 demo
-make report    # 或：.\scripts\run.ps1 report
-make verify    # 或：.\scripts\run.ps1 verify
-make package   # 或：.\scripts\run.ps1 package
+.\scripts\run.ps1 demo
+.\scripts\run.ps1 report
+.\scripts\run.ps1 verify
+.\scripts\run.ps1 package
+
+# 已安装 GNU Make 时也可使用：
+make demo
+make report
+make verify
+make package
 ```
 
 ### 5）真实数据接入状态
 
 - [x] 已登记来源与校验规则：`data/source_manifest.yaml`
-- [x] 已提供离线联调备选：`data/raw/diakg/diakg_fixture.json`
+- [x] 已提供离线联调备选：`data/raw/diakg/diakg_fixture.json`（当前可复现图谱使用 `manual_diakg_fallback`，不是完整 DiaKG）
 - [x] 已提供 MedMNIST 下载与校验脚本：`scripts/fetch_medmnist.py`
 - [x] 本地验证过真实图像根文件路径：`data/raw/retinamnist/retinamnist_224.npz`、`data/raw/pneumoniamnist/pneumoniamnist_224.npz`
 - [x] 图谱产物已统计到真实图像：
@@ -210,8 +217,8 @@ make package   # 或：.\scripts\run.ps1 package
 
 新机器或重新 clone 后，请先执行数据下载/校验，再重建产物：
 
-- `python scripts\fetch_medmnist.py --dataset all --download`
-- `python scripts\fetch_medmnist.py --dataset all --dry-run`
+- `.\scripts\run.ps1 data --dataset all --download`
+- `python -m diabetes_mmkgqa_starter.cli data --repo-root .`
 - `python -m diabetes_mmkgqa_starter.cli kg --repo-root .`
 - `python -m diabetes_mmkgqa_starter.cli load --backend portable --repo-root .`
 
@@ -228,7 +235,85 @@ python -m diabetes_mmkgqa_starter.cli verify --repo-root .
 python -m diabetes_mmkgqa_starter.cli package --repo-root .
 ```
 
-> 如果你直接在 `scripts/run.ps1` 里切了工作目录，需要确保仍位于 `D:\\project\\diabetes_mmkgqa_starter` 仓库根目录。
+> 执行上述命令前请确认当前目录是仓库根目录；不要把本机绝对路径写入报告或提交材料。
+
+## 知识图谱统计与来源（提交摘要）
+
+以下数字来自 `data/processed/stats.json` 与 `data/processed/edges.csv`，可通过 `python -m diabetes_mmkgqa_starter.cli kg --repo-root .` 和 `python -m diabetes_mmkgqa_starter.cli report --repo-root .` 重新生成。当前完整 DiaKG 原始文件未随仓库提供；可复现的离线图谱使用 `manual_diakg_fallback` 作为文本关系 fixture，不能写成完整 DiaKG 结果。
+
+| 指标 | 数量 / 状态 |
+|---|---:|
+| KG version | `0.2.0` |
+| 规范实体数 `canonical_entity_count` | 7507 |
+| 图谱节点总数 `node_count` | 7511 |
+| 唯一语义三元组 / 边总数 | 29852 |
+| 有证据支撑的关系声明 | 29829 |
+| provenance edges | 3 |
+| 影像元数据 / Image 节点 | 7456 / 7456 |
+| 实体类型数 | 15 |
+| 关系类型数 | 13 |
+| quality gate | passed |
+
+### 实体类型
+
+| Entity type | Count |
+|---|---:|
+| DataSplit | 3 |
+| Dataset | 2 |
+| DiagnosticThreshold | 5 |
+| Disease | 9 |
+| Document | 2 |
+| Etiology | 1 |
+| EvidenceChunk | 2 |
+| Guideline | 3 |
+| ICD_Code | 3 |
+| Image | 7456 |
+| ImageGrade | 9 |
+| SeverityLevel | 3 |
+| StandardRule | 7 |
+| Symptom | 1 |
+| TestItem | 5 |
+
+### 关系类型
+
+| Relation type | Count |
+|---|---:|
+| APPLIES_TO | 7 |
+| FROM_DATASET | 7456 |
+| HAS_CAUSE | 1 |
+| HAS_DIAGNOSTIC_THRESHOLD | 5 |
+| HAS_ICD_CODE | 3 |
+| HAS_IMAGE_GRADE | 7456 |
+| HAS_STANDARD_RULE | 4 |
+| HAS_SYMPTOM | 1 |
+| HAS_TEST_ITEM | 4 |
+| IMAGE_ASSOCIATED_WITH | 7456 |
+| IN_SPLIT | 7456 |
+| MENTIONED_IN | 1 |
+| PART_OF_DOCUMENT | 2 |
+
+### 来源文件与抽取器
+
+| source_id | root_file | extractor | 当前复现状态 |
+|---|---|---|---|
+| diakg | `data/raw/diakg/diakg.json` | `src/ingestion/diakg_parser.py` | 需授权后自行放置，当前未作为完整数据统计 |
+| manual_diakg_fallback | `data/raw/diakg/diakg_fixture.json` | `src/ingestion/diakg_parser.py` | 当前离线文本关系 fixture |
+| retinamnist | `data/raw/retinamnist/retinamnist_224.npz` | `src/ingestion/retinamnist_parser.py` | 当前图谱影像来源 |
+| pneumoniamnist | `data/raw/pneumoniamnist/pneumoniamnist_224.npz` | `src/ingestion/pneumoniamnist_parser.py` | 当前图谱影像来源 |
+| manual_a_general_terms | `data/raw/manual/a_general_terms.csv` | `src/ingestion/manual_ab_tables.py` | A 层手工术语 |
+| manual_b_icd10_subset | `data/raw/manual/b_icd10_subset.csv` | `src/ingestion/manual_ab_tables.py` | B 层 ICD 子集 |
+| manual_b_guideline_rules | `data/raw/manual/b_guideline_rules.csv` | `src/ingestion/manual_ab_tables.py` | B 层指南/阈值规则 |
+| manual_c_hypertension_rules | `data/raw/manual/c_hypertension_rules.csv` | `src/ingestion/manual_ab_tables.py` | C 层高血压规则 |
+| manual_aliases | `data/raw/manual/aliases.csv` | `src/normalization/alias_loader.py` | 实体链接别名表，不作为原始三元组来源 |
+
+### 抽取方法统计
+
+| extraction_method | Edge count |
+|---|---:|
+| diakg_parser | 5 |
+| manual | 23 |
+| pneumoniamnist_parser | 23424 |
+| retinamnist_parser | 6400 |
 
 ## 知识问答可问什么
 
@@ -308,6 +393,6 @@ node .\scripts\capture_readme_screenshots.mjs --base-url http://127.0.0.1:8000 -
 This project is an educational Knowledge Graph course project at the National University of Defense Technology. It provides a reproducible layered (A/B/C) medical KGQA platform with multimodal support.
 
 - Follow the same source-of-truth contract as `AGENTS.md` and `docs/project_plan.md`.
-- Use the `make` command suite or `scripts/run.ps1` wrapper for reproducible workflows.
+- On Windows, use `scripts/run.ps1` or `scripts/start.ps1` first; `make` is an optional equivalent when GNU Make is installed.
 - Keep all responses educational and evidence-bounded.
 - Original project code and project-owned documentation are released under the MIT License; third-party datasets and vendored dependencies retain their own terms.

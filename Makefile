@@ -7,16 +7,17 @@ NEO4J_DATABASE ?= neo4j
 DATA_DIR ?= data/processed
 
 help:
-	@echo "Starter contract only; replace each placeholder as implementation lands."
+	@echo "Reproducible course-demo targets. On Windows, prefer scripts/run.ps1."
 
 bootstrap:
-	@echo "TODO: install locked dependencies"
+	@python -m pip install --disable-pip-version-check -r requirements-lock.txt
+	@python -m pip install -e .
 
 data:
-	@echo "TODO: validate source manifest and build interim data"
+	@python -m diabetes_mmkgqa_starter.cli data --repo-root .
 
 kg:
-	@python -m diabetes_mmkgqa_starter.graph_builder
+	@python -m diabetes_mmkgqa_starter.cli kg --repo-root .
 
 up:
 	@PYTHONPATH=src uvicorn diabetes_mmkgqa_starter.api.app:app --host 0.0.0.0 --port 8000 --reload
@@ -38,8 +39,8 @@ demo:
 	@PYTHONPATH=src python -m diabetes_mmkgqa_starter.cli demo
 
 report:
-	@python scripts/assemble_report_inputs.py
+	@python -m diabetes_mmkgqa_starter.cli report --repo-root .
 
 package:
 	@mkdir -p deliverables
-	@python scripts/package_deliverables.py --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip
+	@python -m diabetes_mmkgqa_starter.cli package --repo-root . --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip

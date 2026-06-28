@@ -1,0 +1,10 @@
+{
+  "pageFacts": {
+    "title": "Diabetes MMKGQA Graph Workspace",
+    "url": "http://127.0.0.1:8017/ui?tab=stats",
+    "errors": [],
+    "bodyHasSafety": true
+  },
+  "cdpLogCount": 0,
+  "logs": []
+}

@@ -1828,3 +1828,48 @@ Remaining risks:
 
 - The selector UI uses native buttons and text inputs rather than a full ARIA combobox widget; it is keyboard-searchable via Enter and click-selectable, but could be enhanced later with arrow-key navigation.
 - Natural-name quality still depends on graph aliases and canonical names. This round strengthens the known `糖网`/RetinaMNIST/No_DR path without changing `data/raw/` or adding ontology relations.
+
+## 2026-06-28 - FUP-ROUND-003 README reproducibility and image layout follow-up
+
+Task:
+
+- Implement Fang Xiao's follow-up issues FUP-007/FUP-008/FUP-009/FUP-010/FUP-011: remove scaffold-only README command risk, add submission-grade KG statistics/source tables, make DiaKG fallback status explicit, prefer Windows PowerShell runners, and polish Image Retrieval spacing.
+
+Changes:
+
+- `src/diabetes_mmkgqa_starter/cli.py` now implements real `data` and `report` commands by invoking MedMNIST/DiaKG dry-run checks and the report input assembler.
+- `scripts/assemble_report_inputs.py` now emits entity type, relation type, edge extraction method, edge source, and source-to-extractor tables.
+- `README.md` now places `scripts/run.ps1` first for Windows, keeps `make` optional, adds submission summary statistics, and explicitly states the full DiaKG root is not redistributed and current offline results use `manual_diakg_fallback`.
+- `Makefile` no longer leaves `bootstrap` and `data` as TODO echo targets.
+- `frontend/styles.css` fixes the Image Retrieval panel grid row count and spacing; `tests/test_frontend_graph_ui.py` updates the layout contract.
+- `TASKS.md`, `docs/followup_questions.md`, and `docs/test-report/*` were synchronized with the new FUP-ROUND-003 status.
+
+Commands run:
+
+- `.\\.venv\\Scripts\\python.exe -m pytest tests\\test_cli_smoke.py -q`
+- `python -m diabetes_mmkgqa_starter.cli data --repo-root .`
+- `python -m diabetes_mmkgqa_starter.cli report --repo-root .`
+- `node --check frontend\\app.js`
+- `$env:PATH = (Join-Path (Get-Location) '.venv\\Scripts') + ';' + $env:PATH; .\\scripts\\run.ps1 verify` (first run failed because one frontend test still expected the old 5-row image grid)
+- `.\\.venv\\Scripts\\python.exe -m pytest tests\\test_frontend_graph_ui.py -q`
+- `$env:PATH = (Join-Path (Get-Location) '.venv\\Scripts') + ';' + $env:PATH; .\\scripts\\run.ps1 data --dataset all --dry-run`
+- `$env:PATH = (Join-Path (Get-Location) '.venv\\Scripts') + ';' + $env:PATH; .\\scripts\\run.ps1 verify`
+
+Results:
+
+- `test_cli_smoke.py` passed.
+- `cli data` verified MedMNIST roots; full DiaKG root is missing and fallback fixture is present.
+- `cli report` refreshed `docs/report_inputs.md`.
+- `node --check frontend\\app.js` passed.
+- Updated frontend layout test passed: 8 tests.
+- `run.ps1 data --dataset all --dry-run` verified MedMNIST roots and DiaKG fallback behavior.
+- Final `run.ps1 verify` passed; portable backend loaded `nodes=7511`, `edges=29852`, `images=7456`. One existing Starlette TestClient deprecation warning remains.
+
+Blockers:
+
+- 无。
+
+Remaining risks:
+
+- Optional Neo4j setup still lacks a dedicated `.env.example` or config note.
+- Image Retrieval spacing was validated through CSS contract tests and full verify. A Chrome CLI screenshot attempt produced a connection-refused browser error page and was discarded, so no new screenshot artifact is retained for this round.

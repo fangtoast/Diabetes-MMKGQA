@@ -111,6 +111,63 @@ def build_parser() -> ArgumentParser:
     return parser
 
 
+def _repo_env(repo_root: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    src_path = str((repo_root / "src").resolve())
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = src_path if not existing else src_path + os.pathsep + existing
+    return env
+
+
+def _run_checked(label: str, command: list[str], repo_root: Path) -> int:
+    display_command = " ".join(command)
+    print(f"[cli] {label}: {display_command}", flush=True)
+    result = subprocess.run(
+        command,
+        cwd=str(repo_root),
+        env=_repo_env(repo_root),
+        check=False,
+    )
+    if result.returncode != 0:
+        print(f"[cli] {label} failed with code {result.returncode}")
+    return result.returncode
+
+
+def _run_data_workflow(repo_root: Path) -> int:
+    medmnist_code = _run_checked(
+        "data medmnist dry-run",
+        [sys.executable, "scripts/fetch_medmnist.py", "--dataset", "all", "--dry-run"],
+        repo_root,
+    )
+    if medmnist_code != 0:
+        return medmnist_code
+    return _run_checked(
+        "data diakg dry-run",
+        [sys.executable, "scripts/fetch_diakg.py", "--dry-run"],
+        repo_root,
+    )
+
+
+def _run_report_workflow(args: object) -> int:
+    repo_root = Path(getattr(args, "repo_root", ".")).resolve()
+    return _run_checked(
+        "report inputs",
+        [
+            sys.executable,
+            "scripts/assemble_report_inputs.py",
+            "--stats-path",
+            "data/processed/stats.json",
+            "--manifest-path",
+            "data/source_manifest.yaml",
+            "--demo-path",
+            str(Path(getattr(args, "demo_output_dir", "docs/cases")) / getattr(args, "demo_output_json", "demo_cases.json")),
+            "--output",
+            "docs/report_inputs.md",
+        ],
+        repo_root,
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the CLI.
 
@@ -126,6 +183,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if command in set(AVAILABLE_COMMANDS):
+        if command == "data":
+            return _run_data_workflow(Path(args.repo_root).resolve())
         if command == "kg":
             graph_builder.build_graph_outputs(
                 repo_root=Path(args.repo_root),
@@ -216,8 +275,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print("[cli] verify portable load check failed")
                 return load_result.returncode
 
-            print("[cli] verify passed")
-            return 0
+                print("[cli] verify passed")
+                return 0
+
+        if command == "report":
+            return _run_report_workflow(args)
 
         if command == "package":
             from . import package_builder

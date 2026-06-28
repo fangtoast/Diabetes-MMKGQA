@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 import argparse
+import csv
 import json
 import textwrap
 from typing import Any
@@ -30,14 +32,54 @@ def _read_manifest(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def _md_cell(value: Any) -> str:
+    return str(value if value is not None else "").replace("|", "\\|").replace("\n", " ")
+
+
+def _count_csv_column(path: Path, column: str) -> dict[str, int]:
+    if not path.exists():
+        return {}
+    counts: Counter[str] = Counter()
+    with path.open("r", encoding="utf-8", newline="") as fp:
+        reader = csv.DictReader(fp)
+        for row in reader:
+            value = (row.get(column) or "").strip()
+            if value:
+                counts[value] += 1
+    return dict(sorted(counts.items()))
+
+
+def _read_processed_counts(processed_dir: Path) -> dict[str, dict[str, int]]:
+    return {
+        "edge_extraction_methods": _count_csv_column(processed_dir / "edges.csv", "extraction_method"),
+        "edge_sources": _count_csv_column(processed_dir / "edges.csv", "source_id"),
+    }
+
+
+def _source_status(source: dict[str, Any]) -> str:
+    source_id = str(source.get("source_id", ""))
+    checksum = str(source.get("checksum", ""))
+    if source_id == "diakg" and "TO_BE_FILLED" in checksum:
+        return "authorized full root required before full DiaKG claims"
+    if source_id == "manual_diakg_fallback":
+        return "fallback fixture for offline course demo"
+    return "registered source"
+
+
 def _render_markdown(
     stats: dict[str, Any],
     manifest: dict[str, Any],
     demo: dict[str, Any] | None,
+    processed_counts: dict[str, dict[str, int]] | None = None,
 ) -> str:
     safety_notice = "Educational non-clinical notice (for teaching demonstration only)."
     layer_counts = stats.get("layered_statistics", {}).get("layer_counts", {})
     layer_breakdown = stats.get("layered_statistics", {}).get("layer_breakdown", {})
+    schema_counts = stats.get("schema_validation", {}).get("counts", {})
+    nodes_by_type = schema_counts.get("nodes_by_type", {})
+    relations = schema_counts.get("relations", {})
+    edge_extraction_methods = (processed_counts or {}).get("edge_extraction_methods", {})
+    edge_sources = (processed_counts or {}).get("edge_sources", {})
     warnings = stats.get("warnings", [])
 
     lines = [
@@ -56,7 +98,7 @@ def _render_markdown(
         "python -m diabetes_mmkgqa_starter.cli kg --repo-root .",
         "python -m diabetes_mmkgqa_starter.cli load --backend portable --repo-root . --output-dir data/processed --ontology-path configs/ontology.yaml",
         "python -m diabetes_mmkgqa_starter.cli demo --repo-root . --processed-dir data/processed --demo-output-dir docs/cases --demo-output-json demo_cases.json",
-        "python scripts/assemble_report_inputs.py --stats-path data/processed/stats.json --manifest-path data/source_manifest.yaml --demo-path docs/cases/demo_cases.json --output docs/report_inputs.md",
+        "python -m diabetes_mmkgqa_starter.cli report --repo-root .",
         "python -m diabetes_mmkgqa_starter.cli package --repo-root . --package-output-dir deliverables --package-name diabetes_mmkgqa_deliverables.zip",
         "```",
         "",
@@ -70,6 +112,8 @@ def _render_markdown(
         f"- image_node_count: {stats.get('image_node_count', 0)}",
         f"- node_count: {stats.get('node_count', 0)}",
         f"- edge_count: {stats.get('edge_count', 0)}",
+        f"- entity_type_count: {len(nodes_by_type)}",
+        f"- relation_type_count: {len(relations)}",
         f"- A/B/C Layered Nodes: A={layer_counts.get('node', {}).get('A', 0)} / B={layer_counts.get('node', {}).get('B', 0)} / C={layer_counts.get('node', {}).get('C', 0)}",
         f"- A/B/C Layered Edges: A={layer_counts.get('edge', {}).get('A', 0)} / B={layer_counts.get('edge', {}).get('B', 0)} / C={layer_counts.get('edge', {}).get('C', 0)}",
         "",
@@ -93,23 +137,50 @@ def _render_markdown(
             ]
         )
 
+    if nodes_by_type:
+        lines.extend(["### Entity types", "", "| entity_type | count |", "|---|---:|"])
+        for node_type, count in sorted(nodes_by_type.items()):
+            lines.append(f"| {_md_cell(node_type)} | {count} |")
+        lines.append("")
+
+    if relations:
+        lines.extend(["### Relation types", "", "| relation_type | count |", "|---|---:|"])
+        for relation, count in sorted(relations.items()):
+            lines.append(f"| {_md_cell(relation)} | {count} |")
+        lines.append("")
+
+    if edge_extraction_methods:
+        lines.extend(["### Edge extraction methods", "", "| extraction_method | edge_count |", "|---|---:|"])
+        for method, count in sorted(edge_extraction_methods.items()):
+            lines.append(f"| {_md_cell(method)} | {count} |")
+        lines.append("")
+
+    if edge_sources:
+        lines.extend(["### Edge source counts", "", "| source_id | edge_count |", "|---|---:|"])
+        for source_id, count in sorted(edge_sources.items()):
+            lines.append(f"| {_md_cell(source_id)} | {count} |")
+        lines.append("")
+
     sources = manifest.get("sources", []) if isinstance(manifest.get("sources"), list) else []
     if sources:
         lines.extend(
             [
                 "## Source manifest",
                 "",
-                "| source_id | root_file | checksum | license_or_terms |",
-                "|---|---|---|---|",
+                "Full DiaKG raw data is not redistributed by this repository. The reproducible offline course graph uses `manual_diakg_fallback` unless an authorized `diakg` root is provided and its checksum is recorded.",
+                "",
+                "| source_id | root_file | extractor | checksum | status |",
+                "|---|---|---|---|---|",
             ]
         )
         for source in sources:
             lines.append(
                 "| "
-                + str(source.get("source_id", "")) + " | "
-                + str(source.get("root_file", "")) + " | "
-                + str(source.get("checksum", "")) + " | "
-                + str(source.get("license_or_terms", "")) + " |"
+                + _md_cell(source.get("source_id", "")) + " | "
+                + _md_cell(source.get("root_file", "")) + " | "
+                + _md_cell(source.get("extractor", "")) + " | "
+                + _md_cell(source.get("checksum", "")) + " | "
+                + _md_cell(_source_status(source)) + " |"
             )
         lines.append("")
 
@@ -169,8 +240,9 @@ def main(argv: list[str] | None = None) -> int:
     stats = _read_json(stats_path)
     manifest = _read_manifest(manifest_path)
     demo = _read_json(demo_path) if demo_path.exists() else None
+    processed_counts = _read_processed_counts(stats_path.parent)
 
-    output_path.write_text(_render_markdown(stats, manifest, demo), encoding="utf-8")
+    output_path.write_text(_render_markdown(stats, manifest, demo, processed_counts), encoding="utf-8")
     print(f"[report] wrote {output_path}")
     return 0
 
