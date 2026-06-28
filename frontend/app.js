@@ -17,6 +17,8 @@ const state = {
   graphElements: null,
   graphTransform: null,
   graphRequestId: 0,
+  imagePreset: null,
+  lastStats: null,
 };
 
 const graphDefaults = {
@@ -284,6 +286,7 @@ function renderEntityNote(node) {
     <div class="note-kv"><span>连接摘要</span><span>${escapeHtml(context.relationSummary.join(", ") || "当前子图没有邻接关系。")}</span></div>
     <div class="note-kv"><span>关联图像</span><span>${escapeHtml(context.imageCount)}</span></div>
     <div class="note-kv"><span>source_ids</span><span>${escapeHtml(missingText(node.source_ids))}</span></div>
+    <div class="note-kv"><span>evidence_id</span><span>${escapeHtml(missingText(node.evidence_id))}</span></div>
     <div class="note-kv"><span>kg_version</span><span>${escapeHtml(missingText(node.kg_version))}</span></div>
     <div class="note-kv"><span>description</span><span>${escapeHtml(missingText(node.description || node.text))}</span></div>
   `;
@@ -332,7 +335,12 @@ function renderQa(payload, targetId = "qaOutput") {
       <article class="answer-card">
         <h3>命中实体</h3>
         <p>${escapeHtml(entity.canonical_name)} · ${escapeHtml(entity.node_type)} · Layer ${escapeHtml(entity.knowledge_layer)}</p>
-        <div class="meta-row">${tag(entity.node_id || "")}</div>
+        <div class="meta-row">
+          ${tag(entity.node_id || "")}
+          ${tag(entity.source_ids || "no source")}
+          ${tag(entity.evidence_id || "no evidence")}
+          ${tag(entity.kg_version || "kg -")}
+        </div>
       </article>
     `);
     renderEntityNote(entity);
@@ -377,6 +385,8 @@ function renderImageCard(row) {
         <div class="meta-row">
           ${tag(compactId(row.image_id || ""))}
           ${tag(row.source_id || "-")}
+          ${tag(row.evidence_id || "no evidence")}
+          ${tag(row.kg_version || "kg -")}
           ${tag(row.grade_code ? `grade ${row.grade_code}` : "grade -")}
         </div>
       </div>
@@ -1099,7 +1109,7 @@ function resetGraphSettings() {
   if (state.lastGraph) renderGraph(state.lastGraph);
 }
 
-async function loadImages(event = null) {
+async function loadImages(event = null, overrides = {}) {
   if (event) event.preventDefault();
   const params = new URLSearchParams();
   const fields = [
@@ -1112,42 +1122,115 @@ async function loadImages(event = null) {
     const value = $(id).value.trim();
     if (value) params.set(param, value);
   });
+  Object.entries(overrides).forEach(([key, value]) => {
+    if (key === "label") return;
+    if (value) params.set(key, value);
+  });
   params.set("limit", $("imageLimit").value || "20");
 
-  setStatus("imageStatus", "正在检索影像...", "ok");
+  const presetLabel = overrides.label || state.imagePreset;
+  setStatus("imageStatus", presetLabel ? `正在检索 ${presetLabel}...` : "正在检索影像...", "ok");
   try {
     const payload = await requestJson(`/images/search?${params.toString()}`);
     $("imageOutput").innerHTML = (payload.items || []).map(renderImageCard).join("") || "<p>未检索到影像。</p>";
-    setStatus("imageStatus", `检索到 ${payload.count || 0} 条影像记录。`, "ok");
+    setStatus("imageStatus", `${presetLabel ? `${presetLabel} · ` : ""}检索到 ${payload.count || 0} 条影像记录。`, "ok");
     renderRaw(payload);
   } catch (error) {
     setStatus("imageStatus", `影像检索失败：${error.message}`, "warn");
   }
 }
 
+function loadImagePreset(button) {
+  const sourceId = button.dataset.sourceId || "";
+  const label = button.dataset.label || button.textContent.trim();
+  state.imagePreset = label;
+  ["diseaseId", "gradeId", "datasetId", "splitId"].forEach((id) => {
+    $(id).value = "";
+  });
+  document.querySelectorAll(".image-preset").forEach((item) => {
+    item.classList.toggle("is-active", item === button);
+  });
+  loadImages(null, { source_id: sourceId, label });
+}
+
 async function loadStats() {
   try {
     const payload = await requestJson("/stats");
+    state.lastStats = payload;
     const layer = payload.layered_statistics?.layer_breakdown || {};
     const rows = [
-      ["节点总数", payload.node_count],
-      ["边总数", payload.edge_count],
-      ["影像节点", payload.image_node_count],
-      ["影像元数据", payload.image_metadata_count],
-      ["唯一三元组", payload.unique_semantic_triples_count],
-      ["证据关系", payload.evidence_backed_relation_claim_count],
-      ["A 层节点", layer.A?.node_count || 0],
-      ["B 层节点", layer.B?.node_count || 0],
-      ["C 层节点", layer.C?.node_count || 0],
-      ["质量门", payload.quality_gate?.passed === true ? "passed" : "blocked"],
+      { label: "节点总数", value: payload.node_count, kind: "nodes" },
+      { label: "边总数", value: payload.edge_count, kind: "edges" },
+      { label: "影像节点", value: payload.image_node_count, kind: "image_nodes" },
+      { label: "影像元数据", value: payload.image_metadata_count, kind: "images" },
+      { label: "唯一三元组", value: payload.unique_semantic_triples_count, kind: "semantic_triples" },
+      { label: "证据关系", value: payload.evidence_backed_relation_claim_count, kind: "evidence_claims" },
+      { label: "A 层节点", value: layer.A?.node_count || 0, kind: "layer_A" },
+      { label: "B 层节点", value: layer.B?.node_count || 0, kind: "layer_B" },
+      { label: "C 层节点", value: layer.C?.node_count || 0, kind: "layer_C" },
+      { label: "质量门", value: payload.quality_gate?.passed === true ? "passed" : "blocked", kind: "provenance_edges" },
     ];
     $("statsOutput").innerHTML = rows
-      .map(([labelText, value]) => `<article class="stat-card"><h3>${escapeHtml(labelText)}</h3><div class="stat-value">${escapeHtml(value)}</div></article>`)
+      .map(
+        (item) => `
+          <button class="stat-card stat-action" type="button" data-kind="${escapeHtml(item.kind)}">
+            <h3>${escapeHtml(item.label)}</h3>
+            <div class="stat-value">${escapeHtml(item.value)}</div>
+            <span>点击查看样例</span>
+          </button>
+        `,
+      )
       .join("");
+    document.querySelectorAll(".stat-action").forEach((button) => {
+      button.addEventListener("click", () => loadStatsDetail(button.dataset.kind));
+    });
+    $("statsDetails").innerHTML = `<p class="detail-empty">点击任意统计卡片查看当前图谱中的样例。</p>`;
     renderRaw(payload);
   } catch (error) {
     $("statsOutput").innerHTML = `<article class="stat-card"><h3>加载失败</h3><p>${escapeHtml(error.message)}</p></article>`;
   }
+}
+
+async function loadStatsDetail(kind) {
+  if (!kind) return;
+  $("statsDetails").innerHTML = `<p class="detail-empty">正在载入 ${escapeHtml(kind)} 样例...</p>`;
+  try {
+    const payload = await requestJson(`/stats/details?kind=${encodeURIComponent(kind)}&limit=24`);
+    const items = payload.items || [];
+    $("statsDetails").innerHTML = `
+      <div class="detail-head">
+        <strong>${escapeHtml(kind)}</strong>
+        <span>${escapeHtml(payload.count || 0)} 条记录，展示 ${escapeHtml(items.length)} 条样例</span>
+      </div>
+      <div class="detail-list">
+        ${items.map(renderStatsDetailItem).join("") || "<p>当前统计项没有可展示样例。</p>"}
+      </div>
+    `;
+    renderRaw(payload);
+  } catch (error) {
+    $("statsDetails").innerHTML = `<p class="detail-empty">详情加载失败：${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderStatsDetailItem(item) {
+  const title = item.canonical_name || item.relation || item.dataset || item.image_id || item.edge_id || item.node_id || "样例";
+  const subtitle = item.node_type
+    ? `${item.node_type} · Layer ${item.knowledge_layer || "-"}`
+    : item.head_name
+      ? `${item.head_name} / ${item.tail_name}`
+      : `${item.split || "-"} · ${item.grade || "-"}`;
+  return `
+    <article class="detail-item">
+      <h3>${escapeHtml(title)}</h3>
+      <p>${escapeHtml(subtitle)}</p>
+      <div class="meta-row">
+        ${tag(compactId(item.node_id || item.edge_id || item.image_id || ""))}
+        ${tag(item.source_ids || item.source_id || "no source")}
+        ${tag(item.evidence_id || "no evidence")}
+        ${tag(item.kg_version || "kg -")}
+      </div>
+    </article>
+  `;
 }
 
 function buildDemoCases() {
@@ -1210,8 +1293,12 @@ function bindEvents() {
     });
   });
   $("imageForm").addEventListener("submit", loadImages);
+  document.querySelectorAll(".image-preset").forEach((button) => {
+    button.addEventListener("click", () => loadImagePreset(button));
+  });
   $("loadDefaultImagesBtn").addEventListener("click", () => {
     $("diseaseId").value = state.lastQa?.entity?.node_id || "";
+    state.imagePreset = state.lastQa?.entity?.canonical_name || null;
     loadImages();
   });
   $("refreshStats").addEventListener("click", loadStats);

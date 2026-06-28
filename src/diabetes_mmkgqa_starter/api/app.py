@@ -373,6 +373,8 @@ def create_app(
         grade_id: str | None = Query(default=None),
         dataset_id: str | None = Query(default=None),
         split_id: str | None = Query(default=None),
+        source_id: str | None = Query(default=None),
+        dataset: str | None = Query(default=None),
         limit: int = Query(default=20, ge=1, le=200),
     ) -> dict[str, Any]:
         backend = _require_backend_ready(app)
@@ -381,6 +383,8 @@ def create_app(
             grade_id=grade_id,
             dataset_id=dataset_id,
             split_id=split_id,
+            source_id=source_id,
+            dataset=dataset,
             limit=limit,
         )
         image_items = _with_preview_urls(rows)
@@ -415,6 +419,24 @@ def create_app(
     def graph_stats() -> dict[str, Any]:
         backend = _require_backend_ready(app)
         return _safe_notice(backend.get_stats())
+
+    @app.get("/stats/details")
+    def graph_stats_details(
+        kind: str = Query(
+            ...,
+            description=(
+                "Detail kind: nodes, edges, semantic_triples, evidence_claims, "
+                "provenance_edges, image_nodes, images, layer_A, layer_B, layer_C"
+            ),
+        ),
+        limit: int = Query(default=20, ge=1, le=200),
+    ) -> dict[str, Any]:
+        backend = _require_backend_ready(app)
+        try:
+            details = backend.get_stats_details(kind, limit=limit)
+        except KeyError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        return _safe_notice(details)
 
     @app.exception_handler(HTTPException)
     async def _http_exception_handler(_request, exc):  # type: ignore[no-untyped-def]

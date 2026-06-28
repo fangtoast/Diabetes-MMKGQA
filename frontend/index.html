@@ -240,6 +240,11 @@
             <label>Limit<input id="imageLimit" type="number" min="1" max="80" value="20" /></label>
             <button type="submit">检索影像</button>
           </form>
+          <div class="image-presets" aria-label="医学影像快捷筛选">
+            <button class="image-preset" data-source-id="retinamnist" data-label="糖网影像" type="button">糖网影像</button>
+            <button class="image-preset" data-source-id="retinamnist" data-label="RetinaMNIST+" type="button">RetinaMNIST+</button>
+            <button class="image-preset" data-source-id="pneumoniamnist" data-label="PneumoniaMNIST" type="button">PneumoniaMNIST</button>
+          </div>
           <div id="imageStatus" class="status-line"></div>
           <div id="imageResults" class="image-results" aria-live="polite">
             <div id="imageOutput" class="image-grid"></div>
@@ -255,6 +260,7 @@
             <button id="refreshStats" class="ghost-button" type="button">刷新统计</button>
           </div>
           <div id="statsOutput" class="stats-grid"></div>
+          <div id="statsDetails" class="stats-details" aria-live="polite"></div>
         </section>
 
         <section class="panel-view" data-panel="demo" id="demoPanel">

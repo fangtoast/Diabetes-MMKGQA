@@ -58,3 +58,42 @@ def test_image_retrieval_panel_has_scrollable_results_region() -> None:
     assert "grid-template-rows: auto auto auto minmax(0, 1fr)" in css
     assert ".image-results" in css
     assert "overflow: auto" in css
+
+
+def test_image_retrieval_exposes_preset_filters_and_metadata() -> None:
+    html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "styles.css").read_text(encoding="utf-8")
+    js = (ROOT / "frontend" / "app.js").read_text(encoding="utf-8")
+
+    assert 'class="image-presets"' in html
+    assert 'data-source-id="retinamnist"' in html
+    assert 'data-source-id="pneumoniamnist"' in html
+    assert "function loadImagePreset" in js
+    assert "source_id" in js
+    assert 'row.evidence_id || "no evidence"' in js
+    assert 'row.kg_version || "kg -"' in js
+    assert ".image-preset" in css
+
+
+def test_stats_cards_are_clickable_and_have_detail_panel() -> None:
+    html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "styles.css").read_text(encoding="utf-8")
+    js = (ROOT / "frontend" / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="statsDetails"' in html
+    assert 'data-kind="${escapeHtml(item.kind)}"' in js
+    assert "function loadStatsDetail" in js
+    assert "/stats/details?kind=" in js
+    assert ".stat-action" in css
+    assert ".stats-details" in css
+    assert ".detail-item" in css
+
+
+def test_node_and_qa_entity_details_show_provenance_fields() -> None:
+    js = (ROOT / "frontend" / "app.js").read_text(encoding="utf-8")
+
+    assert "<span>source_ids</span>" in js
+    assert "<span>evidence_id</span>" in js
+    assert "<span>kg_version</span>" in js
+    assert 'entity.source_ids || "no source"' in js
+    assert 'entity.evidence_id || "no evidence"' in js

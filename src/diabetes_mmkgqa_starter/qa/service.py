@@ -56,6 +56,35 @@ class QAService:
     """Deterministic medical QA service without LLM-generated query synthesis."""
 
     IMAGE_RELATIONS = {"IMAGE_ASSOCIATED_WITH", "HAS_IMAGE_GRADE", "FROM_DATASET", "IN_SPLIT"}
+    QUERY_ALIASES = {
+        "糖网": "糖尿病视网膜病变",
+    }
+    RELATION_LABELS = {
+        "HAS_SYMPTOM": "症状或表现",
+        "RECOMMENDS_TEST": "建议检查",
+        "HAS_TEST_ITEM": "相关检查项",
+        "TREATED_BY_DRUG": "相关药物",
+        "TREATED_BY_NONDRUG": "非药物干预",
+        "TREATED_BY_OPERATION": "手术或操作",
+        "HAS_ADVERSE_EFFECT": "不良反应",
+        "HAS_DOSE_AMOUNT": "剂量",
+        "HAS_ADMIN_METHOD": "给药方式",
+        "HAS_DOSE_FREQUENCY": "给药频率",
+        "HAS_DURATION": "持续时间",
+        "AFFECTS_ANATOMY": "影响部位",
+        "HAS_CLASS": "疾病分类",
+        "GOVERNED_BY": "指南依据",
+        "HAS_ICD_CODE": "ICD 编码",
+        "HAS_REFERENCE_RANGE": "参考范围",
+        "HAS_UNIT": "计量单位",
+        "HAS_DIAGNOSTIC_THRESHOLD": "诊断阈值",
+        "HAS_STAGE": "分期或阶段",
+        "HAS_CASE": "示例病例",
+        "IMAGE_ASSOCIATED_WITH": "相关影像",
+        "HAS_IMAGE_GRADE": "影像分级",
+        "FROM_DATASET": "数据集来源",
+        "IN_SPLIT": "数据拆分",
+    }
     STOP_WORDS = {
         "of",
         "the",
@@ -93,8 +122,12 @@ class QAService:
         "查询",
         "展示",
         "显示",
+        "看看",
         "相关",
         "需要做",
+        "要查什么",
+        "查什么",
+        "有什么",
         "建议",
         "症状",
         "表现",
@@ -132,6 +165,7 @@ class QAService:
         "分级",
         "影像示例",
         "相关图片",
+        "有什么图片",
         "图像展示",
         "图片分级",
         "影像分级",
@@ -222,7 +256,7 @@ class QAService:
         )
         rows = self._collect_answers(intent_match, entity_id, graph["edges"], query_template.allowed_relations)
         images = self._collect_images(intent_match, entity)
-        evidence_ids, source_ids = self._collect_metadata_ids(entity, rows)
+        evidence_ids, source_ids = self._collect_metadata_ids(entity, rows, images)
         kg_version = self._infer_version(rows, entity)
 
         if not rows and not images and intent_match.intent.relations:
@@ -358,6 +392,7 @@ class QAService:
         if normalized_trigger:
             without_trigger = without_trigger.replace(normalized_trigger, " ")
         stripped_question = self._strip_chinese_question_fillers(without_trigger)
+        expanded_question = self._expand_query_aliases(stripped_question)
         tokens = re.findall(r"[0-9a-zA-Z\u4e00-\u9fff]+", stripped_question)
         trigger_tokens = {t for t in re.findall(r"[0-9a-zA-Z\u4e00-\u9fff]+", normalized_trigger)}
 
@@ -370,9 +405,12 @@ class QAService:
         if not content_tokens:
             return []
 
-        candidates = [" ".join(content_tokens)]
+        candidates = []
+        if expanded_question and expanded_question != stripped_question:
+            candidates.append(expanded_question)
+        candidates.append(" ".join(content_tokens))
         if re.search(r"[\u4e00-\u9fff]", stripped_question):
-            candidates.insert(0, "".join(content_tokens))
+            candidates.append("".join(content_tokens))
         for token in content_tokens:
             if token and len(token) >= 2:
                 candidates.append(token)
@@ -454,31 +492,57 @@ class QAService:
 
     def _format_answer(self, entity: dict, rows: list[dict], images: list[dict], intent_match: IntentMatch) -> str:
         node_name = str(entity.get("canonical_name", entity.get("node_id", "")))
+        if images:
+            return self._format_image_answer(node_name, rows, images)
+
         if not rows:
-            if images:
-                return f"已找到 {entity.get('canonical_name', node_name)} 的相关影像候选（{len(images)} 张）。"
             return (
                 f"未检索到 {entity.get('canonical_name', node_name)} 的回答条目。"
                 f"当前知识库范围内未发现可支持该意图的条目。"
             )
 
-        rendered = []
+        relation_groups: dict[str, list[str]] = {}
         for row in rows:
             head_name = self._name(row.get("head_id", ""))
             tail_name = self._name(row.get("tail_id", ""))
             relation = str(row.get("relation", ""))
             if row.get("head_id") == entity.get("node_id"):
-                rendered.append(f"{node_name} -> {relation} -> {tail_name}")
+                target_name = tail_name
             elif row.get("tail_id") == entity.get("node_id"):
-                rendered.append(f"{head_name} -> {relation} -> {node_name}")
+                target_name = head_name
             else:
-                rendered.append(f"{head_name} -> {relation} -> {tail_name}")
+                target_name = f"{head_name} / {tail_name}"
+            relation_groups.setdefault(relation, [])
+            if target_name not in relation_groups[relation]:
+                relation_groups[relation].append(target_name)
 
-        image_note = ""
-        if images:
-            image_note = f" 同时返回 {len(images)} 条图像候选。"
-        relations_text = "、".join(rendered[: self.router.fallback_max_rows])
-        return f"{intent_match.intent.name} 检索结果：{relations_text}。{image_note}"
+        sentences = []
+        for relation in sorted(relation_groups):
+            label = self.RELATION_LABELS.get(relation, "相关条目")
+            names = relation_groups[relation]
+            visible = "、".join(names[: self.router.fallback_max_rows])
+            if len(names) > self.router.fallback_max_rows:
+                visible += f"等 {len(names)} 项"
+            sentences.append(f"{node_name}的{label}包括：{visible}")
+
+        return "；".join(sentences) + "。以上内容均来自当前知识图谱的结构化证据。"
+
+    def _format_image_answer(self, node_name: str, rows: list[dict], images: list[dict]) -> str:
+        datasets = self._unique_values(row.get("dataset", "") for row in images)
+        splits = self._unique_values(row.get("split", "") for row in images)
+        grades = self._unique_values(row.get("grade", "") for row in images)
+        sources = self._unique_values(row.get("source_id", "") for row in images)
+        evidence = self._unique_values(row.get("evidence_id", "") for row in images)
+        parts = [
+            f"已在当前知识库中找到 {node_name} 的相关影像候选 {len(images)} 张",
+            f"关联影像关系 {len(rows)} 条" if rows else "",
+            f"数据集：{'、'.join(datasets[:3])}" if datasets else "",
+            f"数据拆分：{'、'.join(splits[:4])}" if splits else "",
+            f"分级示例：{'、'.join(grades[:5])}" if grades else "",
+            f"来源：{'、'.join(sources[:4])}" if sources else "",
+            f"证据 ID 示例：{'、'.join(evidence[:3])}" if evidence else "",
+        ]
+        return "；".join(part for part in parts if part) + "。这些影像仅用于课程演示和数据集级展示，不构成诊断。"
 
     def _format_ambiguity_message(self, intent_match: IntentMatch, ranked_candidates: list[dict]) -> str:
         labels = [f"{item['canonical_name']}({item['node_type']})" for item in ranked_candidates]
@@ -502,15 +566,19 @@ class QAService:
             "metadata": metadata or {"query_supported": False},
         }
 
-    def _collect_metadata_ids(self, entity: dict, rows: list[dict]) -> tuple[list[str], list[str]]:
+    def _collect_metadata_ids(self, entity: dict, rows: list[dict], images: list[dict] | None = None) -> tuple[list[str], list[str]]:
         evidence_ids: set[str] = set()
         source_ids: set[str] = set()
 
         for row in rows:
             evidence_ids.update(self._split_values(str(row.get("evidence_id", ""))))
             source_ids.update(self._split_values(str(row.get("source_id", ""))))
+        for row in images or []:
+            evidence_ids.update(self._split_values(str(row.get("evidence_id", ""))))
+            source_ids.update(self._split_values(str(row.get("source_id", ""))))
 
         source_ids.update(self._split_values(str(entity.get("source_ids", ""))))
+        evidence_ids.update(self._split_values(str(entity.get("evidence_id", ""))))
 
         return sorted(evidence_ids), sorted(source_ids)
 
@@ -553,6 +621,9 @@ class QAService:
             "canonical_name": str(entity.get("canonical_name", "")),
             "node_type": str(entity.get("node_type", "")),
             "knowledge_layer": str(entity.get("knowledge_layer", "")),
+            "source_ids": str(entity.get("source_ids", "")),
+            "evidence_id": str(entity.get("evidence_id", "")),
+            "kg_version": str(entity.get("kg_version", "")),
         }
 
     @staticmethod
@@ -575,6 +646,25 @@ class QAService:
         for phrase in cls.CHINESE_QUERY_FILLERS:
             text = re.sub(re.escape(phrase), " ", text, flags=re.IGNORECASE)
         return " ".join(text.split())
+
+    @classmethod
+    def _expand_query_aliases(cls, value: str) -> str:
+        text = value or ""
+        for alias, canonical in cls.QUERY_ALIASES.items():
+            text = re.sub(re.escape(alias), canonical, text, flags=re.IGNORECASE)
+        return " ".join(text.split())
+
+    @staticmethod
+    def _unique_values(values) -> list[str]:  # type: ignore[no-untyped-def]
+        seen: set[str] = set()
+        output: list[str] = []
+        for value in values:
+            text = str(value or "").strip()
+            if not text or text in seen:
+                continue
+            seen.add(text)
+            output.append(text)
+        return output
 
     @staticmethod
     def _dedup_non_empty(items: list[str]) -> list[str]:

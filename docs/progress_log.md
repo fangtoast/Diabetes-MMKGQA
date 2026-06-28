@@ -1747,3 +1747,47 @@ Remaining risks:
 
 - 药物、副作用、参考范围、数据集或拆分检索仍取决于当前图谱实体/别名覆盖；未覆盖时会按安全合同返回 `not_found` 或澄清候选。
 - Headless verification覆盖 Chrome 桌面视口；移动端布局本轮仅保留既有响应式规则，未重新截图。
+
+## 2026-06-28 - FUP-ROUND-001 follow-up QA/UI remediation
+
+Task:
+
+- 处理张鑫源提出的 FUP-000/001/002/003/004/006；FUP-005 作为 FUP-004 重复项合并处理。
+
+Changes:
+
+- `configs/intents.yaml` 增加口语中文触发词，覆盖“糖网有什么图片”“糖尿病要查什么”“会有什么表现”等问法。
+- `src/diabetes_mmkgqa_starter/qa/service.py` 增加“糖网”查询别名扩展、确定性中文答案模板、图片答案摘要，以及 QA entity 的 `source_ids`、`evidence_id`、`kg_version` 暴露。
+- `src/diabetes_mmkgqa_starter/db/portable_backend.py` 和 API 增加 `/stats/details` 详情样例查询，并为 `/images/search` 增加 `source_id` / `dataset` 稳定筛选参数。
+- `frontend/index.html`、`frontend/app.js`、`frontend/styles.css` 增加医学影像快捷筛选按钮、统计卡片点击详情、图片卡片 provenance 字段、节点详情 `evidence_id` 展示。
+- `TASKS.md` 新增并完成 `FUP-ROUND-001`；`docs/followup_questions.md` 将对应 FUP 标记为 DONE，FUP-005 标记为 DROPPED/合并。
+
+Commands run:
+
+- `.\\.venv\\Scripts\\python.exe -m pytest tests\\test_qa_service.py tests\\test_api_endpoints.py tests\\test_portable_backend.py tests\\test_frontend_graph_ui.py -q`
+- `node --check frontend\\app.js`
+- `.\\scripts\\run.ps1 kg`（首次失败：系统 Python 3.7 缺少 `pandas`）
+- `$env:PATH = (Join-Path (Get-Location) '.venv\\Scripts') + ';' + $env:PATH; .\\scripts\\run.ps1 kg`
+- `$env:PATH = (Join-Path (Get-Location) '.venv\\Scripts') + ';' + $env:PATH; .\\scripts\\run.ps1 verify`
+- FastAPI TestClient smoke for `糖网有什么图片`, `糖尿病要查什么`, `/images/search?source_id=retinamnist`, and `/stats/details?kind=images`.
+- Temporary local UI server on `http://127.0.0.1:8020`; Chrome headless screenshots for `?tab=stats` and `?tab=images`.
+
+Results:
+
+- Targeted tests passed: 26 passed, 1 existing Starlette `allow_redirects` deprecation warning.
+- `node --check frontend\\app.js` passed.
+- `run.ps1 kg` passed after `.venv\\Scripts` was placed first on `PATH`.
+- `run.ps1 verify` passed: 59 tests passed, portable backend loaded with `nodes=7511`, `edges=29852`, `images=7456`.
+- API smoke: `糖网有什么图片` returned `status=ok`, `intent=image_examples_by_disease`, `20` images, and entity provenance; answer no longer contains raw `->` relation rendering.
+- API smoke: `糖尿病要查什么` returned `status=ok`, `intent=disease_tests`.
+- `/stats/details?kind=images&limit=3` returned `count=7456` and safe image metadata samples.
+- Browser plugin control tool was not exposed; validation used Chrome headless fallback. Screenshots were written outside the repo under `%TEMP%`.
+
+Blockers:
+
+- 无。
+
+Remaining risks:
+
+- Chrome validation used static screenshot plus API/DOM evidence rather than full Playwright click automation because Playwright was not installed and the Browser control tool was unavailable.
+- Image presets currently filter by source/dataset; disease-specific image QA still depends on current graph entity aliases and relation coverage.

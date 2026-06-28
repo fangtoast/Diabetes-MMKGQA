@@ -269,6 +269,8 @@ class PortableGraphBackend:
         grade_id: str | None = None,
         dataset_id: str | None = None,
         split_id: str | None = None,
+        source_id: str | None = None,
+        dataset: str | None = None,
         limit: int = 20,
     ) -> list[dict]:
         """Filter image metadata by known relations in processed files."""
@@ -280,6 +282,8 @@ class PortableGraphBackend:
         grade_id = (grade_id or "").strip() or None
         dataset_id = (dataset_id or "").strip() or None
         split_id = (split_id or "").strip() or None
+        source_id = (source_id or "").strip() or None
+        dataset = (dataset or "").strip().lower() or None
 
         image_ids = set(self.images)
         if disease_id is not None:
@@ -290,6 +294,18 @@ class PortableGraphBackend:
             image_ids &= set(self._linked_neighbors(dataset_id, "FROM_DATASET"))
         if split_id is not None:
             image_ids &= set(self._linked_neighbors(split_id, "IN_SPLIT"))
+        if source_id is not None:
+            image_ids &= {
+                image_id
+                for image_id, row in self.images.items()
+                if str(row.get("source_id", "")).strip() == source_id
+            }
+        if dataset is not None:
+            image_ids &= {
+                image_id
+                for image_id, row in self.images.items()
+                if str(row.get("dataset", "")).strip().lower() == dataset
+            }
         if not image_ids:
             return []
 
@@ -312,6 +328,27 @@ class PortableGraphBackend:
             "quality_gate": {"passed": True},
         }
 
+    def get_stats_details(self, kind: str, *, limit: int = 20) -> dict[str, object]:
+        """Return small, safe samples behind the statistics cards."""
+
+        limit = max(1, min(int(limit or 20), 200))
+        normalized = (kind or "").strip()
+        if normalized in {"nodes", "image_nodes", "layer_A", "layer_B", "layer_C"}:
+            rows = self._detail_nodes(normalized)
+        elif normalized in {"edges", "semantic_triples", "evidence_claims", "provenance_edges"}:
+            rows = self._detail_edges(normalized)
+        elif normalized == "images":
+            rows = [self._safe_image(row) for _, row in sorted(self.images.items())]
+        else:
+            raise KeyError(f"Unsupported stats detail kind: {kind}")
+
+        return {
+            "kind": normalized,
+            "count": len(rows),
+            "items": rows[:limit],
+            "limit": limit,
+        }
+
     def _linked_neighbors(self, endpoint_id: str, relation: str) -> list[str]:
         """Return image ids linked to a relation endpoint."""
 
@@ -326,6 +363,94 @@ class PortableGraphBackend:
             if tail_id == endpoint_id and head_id in self.images:
                 image_ids.add(head_id)
         return sorted(image_ids)
+
+    def _detail_nodes(self, kind: str) -> list[dict[str, str]]:
+        rows = []
+        for _, node in sorted(self.nodes.items()):
+            node_type = str(node.get("node_type", ""))
+            layer = str(node.get("knowledge_layer", ""))
+            if kind == "image_nodes" and node_type != "Image":
+                continue
+            if kind.startswith("layer_") and layer != kind.removeprefix("layer_"):
+                continue
+            rows.append(self._safe_node(node))
+        return rows
+
+    def _detail_edges(self, kind: str) -> list[dict[str, str]]:
+        rows = []
+        seen_triples: set[tuple[str, str, str]] = set()
+        for edge in sorted(
+            self.edges,
+            key=lambda row: (
+                str(row.get("relation", "")),
+                str(row.get("head_id", "")),
+                str(row.get("tail_id", "")),
+                str(row.get("edge_id", "")),
+            ),
+        ):
+            if kind == "evidence_claims" and not str(edge.get("evidence_id", "")).strip():
+                continue
+            if kind == "provenance_edges" and str(edge.get("relation", "")) not in {
+                "MENTIONED_IN",
+                "PART_OF_DOCUMENT",
+            }:
+                continue
+            if kind == "semantic_triples":
+                triple = (
+                    str(edge.get("head_id", "")),
+                    str(edge.get("relation", "")),
+                    str(edge.get("tail_id", "")),
+                )
+                if triple in seen_triples:
+                    continue
+                seen_triples.add(triple)
+            rows.append(self._safe_edge(edge))
+        return rows
+
+    def _safe_node(self, node: dict) -> dict[str, str]:
+        return {
+            "node_id": str(node.get("node_id", "")),
+            "canonical_name": str(node.get("canonical_name", "")),
+            "node_type": str(node.get("node_type", "")),
+            "knowledge_layer": str(node.get("knowledge_layer", "")),
+            "source_ids": str(node.get("source_ids", "")),
+            "evidence_id": str(node.get("evidence_id", "")),
+            "kg_version": str(node.get("kg_version", "")),
+            "description": str(node.get("description", "") or node.get("text", ""))[:240],
+        }
+
+    def _safe_edge(self, edge: dict) -> dict[str, str]:
+        head_id = str(edge.get("head_id", ""))
+        tail_id = str(edge.get("tail_id", ""))
+        head = self.nodes.get(head_id, {})
+        tail = self.nodes.get(tail_id, {})
+        return {
+            "edge_id": str(edge.get("edge_id", "")),
+            "head_id": head_id,
+            "head_name": str(head.get("canonical_name", head_id)),
+            "relation": str(edge.get("relation", "")),
+            "tail_id": tail_id,
+            "tail_name": str(tail.get("canonical_name", tail_id)),
+            "source_id": str(edge.get("source_id", "")),
+            "evidence_id": str(edge.get("evidence_id", "")),
+            "extraction_method": str(edge.get("extraction_method", "")),
+            "confidence": str(edge.get("confidence", "")),
+            "knowledge_layer": str(edge.get("knowledge_layer", "")),
+            "kg_version": str(edge.get("kg_version", "")),
+        }
+
+    @staticmethod
+    def _safe_image(row: dict) -> dict[str, str]:
+        return {
+            "image_id": str(row.get("image_id", "")),
+            "dataset": str(row.get("dataset", "")),
+            "split": str(row.get("split", "")),
+            "grade": str(row.get("grade", "")),
+            "grade_code": str(row.get("grade_code", "")),
+            "source_id": str(row.get("source_id", "")),
+            "evidence_id": str(row.get("evidence_id", "")),
+            "kg_version": str(row.get("kg_version", "")),
+        }
 
     def _read_rows(self, filename: str) -> list[dict]:
         path = self.processed_dir / filename

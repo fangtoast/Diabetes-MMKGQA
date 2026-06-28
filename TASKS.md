@@ -112,3 +112,9 @@ This ledger is the current TODO source. The long-form roadmap is
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
 | DEMO-002 | DONE | Ensure demo screenshot capture persists files | `demo` runs with screenshot enabled writes `docs/screenshots/demo_001.png` … `docs/screenshots/demo_005.png` and report metadata matches generated artifacts. |
+
+## Phase 11 - Follow-up remediation
+
+| ID | Status | Task | Acceptance criteria |
+|---|---|---|---|
+| FUP-ROUND-001 | DONE | Resolve Zhang Xinyuan follow-up QA/UI issues | FUP-000/001/002/003/004/006 are implemented; FUP-005 is merged into FUP-004; Chinese colloquial QA, deterministic natural answers, image presets, stats detail drilldown, and provenance fields are tested; `run.ps1 kg` and `run.ps1 verify` pass with the local `.venv`. |

@@ -333,6 +333,12 @@ def test_api_qa_and_search_endpoints(tmp_path: Path):
     assert default_images_body["count"] == 1
     assert default_images_body["images"][0]["image_id"] == "i1"
 
+    source_images = client.get("/images/search", params={"source_id": "retinamnist", "limit": 5})
+    assert source_images.status_code == 200
+    source_images_body = source_images.json()
+    assert source_images_body["count"] == 1
+    assert source_images_body["images"][0]["source_id"] == "retinamnist"
+
     preview = client.get("/images/i1/preview.png")
     assert preview.status_code == 200
     assert preview.headers["content-type"] == "image/png"
@@ -350,6 +356,27 @@ def test_api_images_search_and_stats_require_backend(tmp_path: Path):
     assert stats_body["node_count"] == 6
     assert stats_body["edge_count"] == 5
     assert "课程演示、非临床诊断" in stats_body["safety_notice"]
+
+    details = client.get("/stats/details", params={"kind": "images", "limit": 5})
+    assert details.status_code == 200
+    details_body = details.json()
+    assert details_body["kind"] == "images"
+    assert details_body["count"] == 1
+    assert details_body["items"][0]["image_id"] == "i1"
+    assert "relative_path" not in details_body["items"][0]
+    assert "D:\\" not in str(details_body["items"])
+    assert "课程演示、非临床诊断" in details_body["safety_notice"]
+
+    evidence_details = client.get("/stats/details", params={"kind": "evidence_claims", "limit": 5})
+    assert evidence_details.status_code == 200
+    evidence_body = evidence_details.json()
+    assert evidence_body["count"] == 5
+    assert evidence_body["items"][0]["evidence_id"]
+    assert "head_name" in evidence_body["items"][0]
+
+    invalid_details = client.get("/stats/details", params={"kind": "raw_paths"})
+    assert invalid_details.status_code == 422
+    assert "课程演示、非临床诊断" in invalid_details.json()["safety_notice"]
 
     missing = client.get("/graph/subgraph", params={"center_node_id": "missing", "max_hops": 1})
     assert missing.status_code == 404

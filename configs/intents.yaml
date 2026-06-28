@@ -9,6 +9,9 @@ intents:
       - 表现为
       - 典型症状
       - 有哪些症状
+      - 会有什么表现
+      - 有什么表现
+      - 什么表现
       - symptom
       - symptoms
       - common symptoms
@@ -25,6 +28,10 @@ intents:
       - 建议检查
       - 检查项
       - 需要做哪些检查
+      - 要查什么
+      - 查什么
+      - 做什么检查
+      - 需要检查什么
       - test
       - tests
       - lab test
@@ -210,6 +217,10 @@ intents:
       - 相关图片
       - 图像展示
       - 看图片
+      - 有什么图片
+      - 糖网图片
+      - 眼底图像
+      - 展示影像
       - image
       - images
       - show images

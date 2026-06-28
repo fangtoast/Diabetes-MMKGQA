@@ -86,6 +86,7 @@ def _build_portable_fixture(processed_dir: Path) -> None:
                 "confidence": "1.0",
                 "knowledge_layer": "C",
                 "kg_version": "0.2.0",
+                "evidence_id": "ev1",
             },
             {
                 "head_id": "n2",
@@ -131,6 +132,7 @@ def _build_portable_fixture(processed_dir: Path) -> None:
             "confidence",
             "knowledge_layer",
             "kg_version",
+            "evidence_id",
         ],
     )
 
@@ -143,10 +145,11 @@ def _build_portable_fixture(processed_dir: Path) -> None:
                 "dataset": "retina_dataset",
                 "split": "train",
                 "grade": "grade_3",
+                "source_id": "retinamnist",
                 "kg_version": "0.2.0",
             }
         ],
-        fieldnames=["image_id", "relative_path", "dataset", "split", "grade", "kg_version"],
+        fieldnames=["image_id", "relative_path", "dataset", "split", "grade", "source_id", "kg_version"],
     )
 
 
@@ -192,6 +195,8 @@ def test_portable_backend_image_search_filters(tmp_path: Path):
     images_by_grade = backend.search_images(grade_id="n3")
     images_by_dataset = backend.search_images(dataset_id="n4")
     images_by_split = backend.search_images(split_id="n5")
+    images_by_source = backend.search_images(source_id="retinamnist")
+    images_by_dataset_name = backend.search_images(dataset="retina_dataset")
     images_intersection = backend.search_images(disease_id="n1", grade_id="n3", dataset_id="n4", split_id="n5")
 
     assert len(images_by_disease) == 1
@@ -199,6 +204,8 @@ def test_portable_backend_image_search_filters(tmp_path: Path):
     assert len(images_by_grade) == 1
     assert len(images_by_dataset) == 1
     assert len(images_by_split) == 1
+    assert len(images_by_source) == 1
+    assert len(images_by_dataset_name) == 1
     assert len(images_intersection) == 1
     assert images_intersection[0]["image_id"] == "n2"
 
@@ -213,3 +220,25 @@ def test_portable_backend_stats_from_graph(tmp_path: Path):
     assert stats["edge_count"] == 4
     assert stats["image_node_count"] == 1
     assert stats["image_metadata_count"] == 1
+
+
+def test_portable_backend_stats_details_are_safe_samples(tmp_path: Path):
+    processed = tmp_path / "data" / "processed"
+    _build_portable_fixture(processed)
+    backend = PortableGraphBackend.from_dir(processed)
+
+    nodes = backend.get_stats_details("nodes", limit=2)
+    edges = backend.get_stats_details("evidence_claims", limit=5)
+    images = backend.get_stats_details("images", limit=5)
+    layer_c = backend.get_stats_details("layer_C", limit=10)
+
+    assert nodes["kind"] == "nodes"
+    assert nodes["count"] == 5
+    assert set(nodes["items"][0]) >= {"node_id", "canonical_name", "source_ids", "kg_version"}
+    assert "relative_path" not in nodes["items"][0]
+    assert edges["count"] == 1
+    assert edges["items"][0]["evidence_id"] == "ev1"
+    assert "head_name" in edges["items"][0]
+    assert images["items"][0]["image_id"] == "n2"
+    assert "relative_path" not in images["items"][0]
+    assert layer_c["count"] == 5
