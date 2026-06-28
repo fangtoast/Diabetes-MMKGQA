@@ -86,7 +86,8 @@ class PortableGraphBackend:
             return []
 
         requested = set(node_types or [])
-        matches: list[tuple[int, str, dict]] = []
+        query_terms = self._expanded_entity_queries(q, requested)
+        matches: list[tuple[int, int, int, str, dict]] = []
         for node_id, row in self.nodes.items():
             node_type = row.get("node_type", "")
             if requested and node_type and node_type not in requested:
@@ -95,25 +96,27 @@ class PortableGraphBackend:
             canonical = str(row.get("canonical_name", "")).lower()
             aliases = str(row.get("aliases", "")).lower()
             synonyms = str(row.get("synonyms", "")).lower()
-            alias_canonical = self._alias_index.get((node_type, q))
             fields = [
                 (canonical, row.get("node_id", "")),
                 (aliases, None),
                 (synonyms, None),
             ]
             score = None
-            for field_value, node_id_hint in fields:
-                score = self._match_score(q, field_value, node_id_hint)
+            for term in query_terms:
+                for field_value, node_id_hint in fields:
+                    score = self._match_score(term, field_value, node_id_hint)
+                    if score is not None:
+                        break
                 if score is not None:
                     break
-            if score is None and alias_canonical:
-                score = self._match_score(alias_canonical.lower(), canonical, row.get("node_id", ""))
             if score is None:
                 continue
-            matches.append((score, node_id, row))
+            layer_rank = self._search_layer_rank(row, requested)
+            image_rank = self._search_image_rank(node_id, row, requested)
+            matches.append((score, layer_rank, image_rank, node_id, row))
 
-        matches.sort(key=lambda item: (item[0], item[1]))
-        return [row for _, _, row in matches[: max(limit, 0)]]
+        matches.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
+        return [row for _, _, _, _, row in matches[: max(limit, 0)]]
 
     def query_overview(
         self,
@@ -363,6 +366,40 @@ class PortableGraphBackend:
             if tail_id == endpoint_id and head_id in self.images:
                 image_ids.add(head_id)
         return sorted(image_ids)
+
+    def _expanded_entity_queries(self, query: str, requested: set[str]) -> list[str]:
+        terms = [query]
+        node_types = requested or {node.get("node_type", "") for node in self.nodes.values()}
+        for node_type in node_types:
+            alias_canonical = self._alias_index.get((node_type, query))
+            if alias_canonical:
+                terms.append(alias_canonical.lower())
+        if not requested or "Disease" in requested:
+            disease_aliases = {
+                "糖网": "糖尿病视网膜病变",
+                "dr": "糖尿病视网膜病变",
+                "diabetic retinopathy": "糖尿病视网膜病变",
+            }
+            expanded = disease_aliases.get(query)
+            if expanded:
+                terms.append(expanded.lower())
+        return list(dict.fromkeys(terms))
+
+    @staticmethod
+    def _search_layer_rank(row: dict, requested: set[str]) -> int:
+        if requested and "Disease" not in requested:
+            return 0
+        if row.get("node_type") != "Disease":
+            return 0
+        layer_order = {"C": 0, "B": 1, "A": 2}
+        return layer_order.get(str(row.get("knowledge_layer", "")), 9)
+
+    def _search_image_rank(self, node_id: str, row: dict, requested: set[str]) -> int:
+        if row.get("node_type") != "Disease":
+            return 0
+        if requested and "Disease" not in requested:
+            return 0
+        return 0 if self._linked_neighbors(node_id, "IMAGE_ASSOCIATED_WITH") else 1
 
     def _detail_nodes(self, kind: str) -> list[dict[str, str]]:
         rows = []

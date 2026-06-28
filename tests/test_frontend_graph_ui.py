@@ -55,7 +55,7 @@ def test_image_retrieval_panel_has_scrollable_results_region() -> None:
     assert 'id="imageResults"' in html
     assert 'class="image-results"' in html
     assert "#imagesPanel.panel-view.is-active" in css
-    assert "grid-template-rows: auto auto auto minmax(0, 1fr)" in css
+    assert "grid-template-rows: auto auto auto auto minmax(0, 1fr)" in css
     assert ".image-results" in css
     assert "overflow: auto" in css
 
@@ -73,6 +73,29 @@ def test_image_retrieval_exposes_preset_filters_and_metadata() -> None:
     assert 'row.evidence_id || "no evidence"' in js
     assert 'row.kg_version || "kg -"' in js
     assert ".image-preset" in css
+
+
+def test_image_retrieval_has_searchable_selectors_and_advanced_ids() -> None:
+    html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "styles.css").read_text(encoding="utf-8")
+    js = (ROOT / "frontend" / "app.js").read_text(encoding="utf-8")
+
+    assert 'class="image-selector-grid"' in html
+    assert 'id="diseaseSearch"' in html
+    assert 'id="datasetSearch"' in html
+    assert 'id="gradeSearch"' in html
+    assert 'id="splitSearch"' in html
+    assert 'id="imageActiveFilters"' in html
+    assert 'id="imageAdvanced"' in html
+    assert 'id="diseaseId"' in html
+    assert "node_types" in js
+    assert "function searchImageSelector" in js
+    assert "function selectImageFilter" in js
+    assert "function renderImageActiveFilters" in js
+    assert "searchImageSelector(button.dataset.filter)" in js
+    assert ".selector-result" in css
+    assert ".filter-chip" in css
+    assert ".image-advanced" in css
 
 
 def test_stats_cards_are_clickable_and_have_detail_panel() -> None:

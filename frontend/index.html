@@ -232,14 +232,52 @@
             <button id="loadDefaultImagesBtn" class="ghost-button" type="button">载入样例</button>
           </div>
 
-          <form id="imageForm" class="filter-grid">
-            <label>Disease ID<input id="diseaseId" /></label>
-            <label>ImageGrade ID<input id="gradeId" /></label>
-            <label>Dataset ID<input id="datasetId" /></label>
-            <label>DataSplit ID<input id="splitId" /></label>
-            <label>Limit<input id="imageLimit" type="number" min="1" max="80" value="20" /></label>
-            <button type="submit">检索影像</button>
-          </form>
+          <div class="image-selector-grid" aria-label="医学影像可搜索筛选">
+            <section class="image-selector" data-filter="disease">
+              <label for="diseaseSearch">疾病</label>
+              <div class="search-row">
+                <input id="diseaseSearch" autocomplete="off" placeholder="糖网 / 糖尿病视网膜病变" />
+                <button class="icon-button image-selector-search" data-filter="disease" type="button" title="搜索疾病">⌕</button>
+              </div>
+              <div id="diseaseChoices" class="selector-results" aria-live="polite"></div>
+            </section>
+            <section class="image-selector" data-filter="dataset">
+              <label for="datasetSearch">数据集</label>
+              <div class="search-row">
+                <input id="datasetSearch" autocomplete="off" placeholder="RetinaMNIST+ / PneumoniaMNIST" />
+                <button class="icon-button image-selector-search" data-filter="dataset" type="button" title="搜索数据集">⌕</button>
+              </div>
+              <div id="datasetChoices" class="selector-results" aria-live="polite"></div>
+            </section>
+            <section class="image-selector" data-filter="grade">
+              <label for="gradeSearch">影像分级</label>
+              <div class="search-row">
+                <input id="gradeSearch" autocomplete="off" placeholder="No_DR / Moderate / Pneumonia" />
+                <button class="icon-button image-selector-search" data-filter="grade" type="button" title="搜索分级">⌕</button>
+              </div>
+              <div id="gradeChoices" class="selector-results" aria-live="polite"></div>
+            </section>
+            <section class="image-selector" data-filter="split">
+              <label for="splitSearch">数据拆分</label>
+              <div class="search-row">
+                <input id="splitSearch" autocomplete="off" placeholder="train / val / test" />
+                <button class="icon-button image-selector-search" data-filter="split" type="button" title="搜索拆分">⌕</button>
+              </div>
+              <div id="splitChoices" class="selector-results" aria-live="polite"></div>
+            </section>
+          </div>
+          <div id="imageActiveFilters" class="active-filter-row" aria-live="polite"></div>
+          <details id="imageAdvanced" class="image-advanced">
+            <summary>高级 ID 筛选</summary>
+            <form id="imageForm" class="filter-grid">
+              <label>Disease ID<input id="diseaseId" /></label>
+              <label>ImageGrade ID<input id="gradeId" /></label>
+              <label>Dataset ID<input id="datasetId" /></label>
+              <label>DataSplit ID<input id="splitId" /></label>
+              <label>Limit<input id="imageLimit" type="number" min="1" max="80" value="20" /></label>
+              <button type="submit">检索影像</button>
+            </form>
+          </details>
           <div class="image-presets" aria-label="医学影像快捷筛选">
             <button class="image-preset" data-source-id="retinamnist" data-label="糖网影像" type="button">糖网影像</button>
             <button class="image-preset" data-source-id="retinamnist" data-label="RetinaMNIST+" type="button">RetinaMNIST+</button>

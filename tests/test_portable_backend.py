@@ -186,6 +186,91 @@ def test_portable_backend_search_and_subgraph(tmp_path: Path):
     assert any(row["relation"] == "IMAGE_ASSOCIATED_WITH" for row in subgraph["edges"])
 
 
+def test_portable_backend_search_prefers_image_linked_disease_alias(tmp_path: Path):
+    processed = tmp_path / "data" / "processed"
+    _write_csv(
+        processed / "nodes.csv",
+        [
+            {
+                "node_id": "d_general",
+                "node_type": "Disease",
+                "canonical_name": "糖尿病视网膜病变",
+                "aliases": "糖网",
+                "knowledge_layer": "A",
+                "source_ids": "manual_a_general_terms",
+                "kg_version": "0.2.0",
+            },
+            {
+                "node_id": "d_image",
+                "node_type": "Disease",
+                "canonical_name": "糖尿病视网膜病变",
+                "aliases": "DR",
+                "knowledge_layer": "C",
+                "source_ids": "retinamnist",
+                "kg_version": "0.2.0",
+            },
+            {
+                "node_id": "i_retina",
+                "node_type": "Image",
+                "canonical_name": "RetinaMNIST+ image train 000000",
+                "knowledge_layer": "C",
+                "source_ids": "retinamnist",
+                "kg_version": "0.2.0",
+            },
+        ],
+        fieldnames=["node_id", "node_type", "canonical_name", "aliases", "knowledge_layer", "source_ids", "kg_version"],
+    )
+    _write_csv(
+        processed / "edges.csv",
+        [
+            {
+                "head_id": "i_retina",
+                "tail_id": "d_image",
+                "edge_id": "e_retina",
+                "relation": "IMAGE_ASSOCIATED_WITH",
+                "source_id": "retinamnist",
+                "extraction_method": "retinamnist_parser",
+                "confidence": "1.0",
+                "knowledge_layer": "C",
+                "kg_version": "0.2.0",
+                "evidence_id": "ev_retina",
+            }
+        ],
+        fieldnames=[
+            "head_id",
+            "tail_id",
+            "edge_id",
+            "relation",
+            "source_id",
+            "extraction_method",
+            "confidence",
+            "knowledge_layer",
+            "kg_version",
+            "evidence_id",
+        ],
+    )
+    _write_csv(
+        processed / "images.csv",
+        [
+            {
+                "image_id": "i_retina",
+                "dataset": "RetinaMNIST+",
+                "split": "train",
+                "grade": "No_DR",
+                "source_id": "retinamnist",
+                "kg_version": "0.2.0",
+            }
+        ],
+        fieldnames=["image_id", "dataset", "split", "grade", "source_id", "kg_version"],
+    )
+
+    backend = PortableGraphBackend.from_dir(processed)
+
+    matches = backend.search_entities("糖网", node_types=["Disease"], limit=5)
+    assert matches[0]["node_id"] == "d_image"
+    assert backend.search_images(disease_id=matches[0]["node_id"])[0]["image_id"] == "i_retina"
+
+
 def test_portable_backend_image_search_filters(tmp_path: Path):
     processed = tmp_path / "data" / "processed"
     _build_portable_fixture(processed)

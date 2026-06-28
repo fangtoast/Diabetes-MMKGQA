@@ -1791,3 +1791,40 @@ Remaining risks:
 
 - Chrome validation used static screenshot plus API/DOM evidence rather than full Playwright click automation because Playwright was not installed and the Browser control tool was unavailable.
 - Image presets currently filter by source/dataset; disease-specific image QA still depends on current graph entity aliases and relation coverage.
+
+## 2026-06-28 - FUP-ROUND-002 searchable medical-image filters
+
+Task:
+
+- Implement the confirmed follow-up improvement: users should not need to know graph IDs to use the Medical Images page. The main flow now supports searchable selectors for disease, dataset, image grade, and split; raw ID filters remain available as an advanced path.
+
+Changes:
+
+- `src/diabetes_mmkgqa_starter/db/portable_backend.py` now expands common disease aliases such as `糖网` and ranks Disease search results so C-layer, image-linked disease nodes appear before general A-layer duplicates.
+- `frontend/index.html`, `frontend/app.js`, and `frontend/styles.css` replace the main ID-first image filter UI with searchable Disease/Dataset/ImageGrade/DataSplit selector cards, active removable filter chips, and a folded Advanced ID filter form.
+- `tests/test_portable_backend.py`, `tests/test_api_endpoints.py`, and `tests/test_frontend_graph_ui.py` cover `糖网`, `RetinaMNIST`, `No_DR`, selector DOM/functions, advanced ID preservation, and image provenance display.
+- `TASKS.md` added and completed `FUP-ROUND-002`.
+
+Commands run:
+
+- `.\\.venv\\Scripts\\python.exe -m pytest tests\\test_portable_backend.py tests\\test_api_endpoints.py tests\\test_frontend_graph_ui.py -q`
+- `node --check frontend\\app.js`
+- `$env:PATH = (Join-Path (Get-Location) '.venv\\Scripts') + ';' + $env:PATH; .\\scripts\\run.ps1 verify`
+- Temporary local API/UI server on `http://127.0.0.1:8021` for `/health`, DOM smoke, `/entities/search`, and `/images/search` checks.
+
+Results:
+
+- Targeted tests passed: 19 passed, 1 existing Starlette `allow_redirects` deprecation warning.
+- `node --check frontend\\app.js` passed.
+- `run.ps1 verify` passed: 61 tests passed, portable backend loaded with `nodes=7511`, `edges=29852`, `images=7456`.
+- API/DOM smoke passed: the images page HTML exposes `image-selector-grid`, `diseaseSearch`, `datasetSearch`, `gradeSearch`, `splitSearch`, and `imageAdvanced`; `/entities/search?query=糖网&node_types=Disease` returned 2 candidates with the first candidate in C layer and sourced from `manual_diakg_fallback|retinamnist`; `/images/search?disease_id=<first candidate>&limit=3` returned 3 RetinaMNIST+ image rows with source/evidence/KG metadata.
+- Headless Chrome screenshot command was attempted, but the valid root route loses query parameters on redirect and `/index.html?tab=images` is not a served path in the current FastAPI static setup. The screenshot artifact was therefore not used as pass evidence; validation relied on tests plus DOM/API smoke.
+
+Blockers:
+
+- 无。
+
+Remaining risks:
+
+- The selector UI uses native buttons and text inputs rather than a full ARIA combobox widget; it is keyboard-searchable via Enter and click-selectable, but could be enhanced later with arrow-key navigation.
+- Natural-name quality still depends on graph aliases and canonical names. This round strengthens the known `糖网`/RetinaMNIST/No_DR path without changing `data/raw/` or adding ontology relations.

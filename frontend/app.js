@@ -18,6 +18,12 @@ const state = {
   graphTransform: null,
   graphRequestId: 0,
   imagePreset: null,
+  imageFilters: {
+    disease: null,
+    dataset: null,
+    grade: null,
+    split: null,
+  },
   lastStats: null,
 };
 
@@ -31,6 +37,37 @@ const graphDefaults = {
   centerForce: 3,
   repelForce: -280,
   linkDistance: 112,
+};
+
+const imageSelectorConfig = {
+  disease: {
+    label: "疾病",
+    nodeTypes: "Disease",
+    inputId: "diseaseSearch",
+    resultsId: "diseaseChoices",
+    targetId: "diseaseId",
+  },
+  dataset: {
+    label: "数据集",
+    nodeTypes: "Dataset",
+    inputId: "datasetSearch",
+    resultsId: "datasetChoices",
+    targetId: "datasetId",
+  },
+  grade: {
+    label: "影像分级",
+    nodeTypes: "ImageGrade",
+    inputId: "gradeSearch",
+    resultsId: "gradeChoices",
+    targetId: "gradeId",
+  },
+  split: {
+    label: "数据拆分",
+    nodeTypes: "DataSplit",
+    inputId: "splitSearch",
+    resultsId: "splitChoices",
+    targetId: "splitId",
+  },
 };
 
 const demoCases = [
@@ -1109,6 +1146,115 @@ function resetGraphSettings() {
   if (state.lastGraph) renderGraph(state.lastGraph);
 }
 
+function renderImageActiveFilters() {
+  const container = $("imageActiveFilters");
+  if (!container) return;
+  const selected = Object.entries(state.imageFilters).filter(([, item]) => item);
+  if (!selected.length) {
+    container.innerHTML = `<span class="filter-empty">可按自然名称搜索筛选；不选择时展示全部可用影像。</span>`;
+    return;
+  }
+  container.innerHTML = selected
+    .map(([key, item]) => {
+      const config = imageSelectorConfig[key];
+      return `
+        <button class="filter-chip" type="button" data-filter="${escapeHtml(key)}" title="移除筛选">
+          <span>${escapeHtml(config.label)}：${escapeHtml(nodeLabel(item))}</span>
+          <strong>×</strong>
+        </button>
+      `;
+    })
+    .join("");
+  container.querySelectorAll(".filter-chip").forEach((button) => {
+    button.addEventListener("click", () => removeImageFilter(button.dataset.filter));
+  });
+}
+
+function imageResultMeta(item) {
+  const source = item.source_ids || item.source_id || "no source";
+  const kg = item.kg_version || "kg -";
+  const layer = item.knowledge_layer ? `Layer ${item.knowledge_layer}` : "Layer -";
+  return `${item.node_type || "-"} · ${layer} · ${source} · ${kg}`;
+}
+
+function selectImageFilter(filterKey, item) {
+  const config = imageSelectorConfig[filterKey];
+  if (!config || !item?.node_id) return;
+  state.imagePreset = null;
+  state.imageFilters[filterKey] = item;
+  $(config.targetId).value = item.node_id;
+  $(config.inputId).value = nodeLabel(item);
+  $(config.resultsId).innerHTML = "";
+  document.querySelectorAll(".image-preset").forEach((button) => button.classList.remove("is-active"));
+  renderImageActiveFilters();
+  loadImages();
+}
+
+function removeImageFilter(filterKey) {
+  const config = imageSelectorConfig[filterKey];
+  if (!config) return;
+  state.imageFilters[filterKey] = null;
+  $(config.targetId).value = "";
+  $(config.inputId).value = "";
+  $(config.resultsId).innerHTML = "";
+  renderImageActiveFilters();
+  loadImages();
+}
+
+function resetImageFilters() {
+  Object.entries(imageSelectorConfig).forEach(([key, config]) => {
+    state.imageFilters[key] = null;
+    const input = $(config.inputId);
+    const target = $(config.targetId);
+    const results = $(config.resultsId);
+    if (input) input.value = "";
+    if (target) target.value = "";
+    if (results) results.innerHTML = "";
+  });
+  renderImageActiveFilters();
+}
+
+async function searchImageSelector(filterKey) {
+  const config = imageSelectorConfig[filterKey];
+  if (!config) return [];
+  const query = ($(config.inputId).value || "").trim();
+  const container = $(config.resultsId);
+  if (!query) {
+    container.textContent = `请输入${config.label}名称或别名。`;
+    return [];
+  }
+  container.textContent = "搜索中...";
+  const params = new URLSearchParams({
+    query,
+    node_types: config.nodeTypes,
+    limit: "8",
+  });
+  try {
+    const payload = await requestJson(`/entities/search?${params.toString()}`);
+    const items = payload.items || [];
+    if (!items.length) {
+      container.textContent = "没有匹配候选。";
+      return [];
+    }
+    container.innerHTML = "";
+    items.forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "selector-result";
+      button.innerHTML = `
+        <strong>${escapeHtml(nodeLabel(item))}</strong>
+        <span>${escapeHtml(imageResultMeta(item))}</span>
+      `;
+      button.addEventListener("click", () => selectImageFilter(filterKey, item));
+      container.appendChild(button);
+    });
+    return items;
+  } catch (error) {
+    container.textContent = `搜索失败：${error.message}`;
+    return [];
+  }
+}
+
 async function loadImages(event = null, overrides = {}) {
   if (event) event.preventDefault();
   const params = new URLSearchParams();
@@ -1144,9 +1290,7 @@ function loadImagePreset(button) {
   const sourceId = button.dataset.sourceId || "";
   const label = button.dataset.label || button.textContent.trim();
   state.imagePreset = label;
-  ["diseaseId", "gradeId", "datasetId", "splitId"].forEach((id) => {
-    $(id).value = "";
-  });
+  resetImageFilters();
   document.querySelectorAll(".image-preset").forEach((item) => {
     item.classList.toggle("is-active", item === button);
   });
@@ -1293,12 +1437,30 @@ function bindEvents() {
     });
   });
   $("imageForm").addEventListener("submit", loadImages);
+  Object.entries(imageSelectorConfig).forEach(([key, config]) => {
+    $(config.inputId).addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        searchImageSelector(key);
+      }
+    });
+  });
+  document.querySelectorAll(".image-selector-search").forEach((button) => {
+    button.addEventListener("click", () => searchImageSelector(button.dataset.filter));
+  });
   document.querySelectorAll(".image-preset").forEach((button) => {
     button.addEventListener("click", () => loadImagePreset(button));
   });
   $("loadDefaultImagesBtn").addEventListener("click", () => {
-    $("diseaseId").value = state.lastQa?.entity?.node_id || "";
-    state.imagePreset = state.lastQa?.entity?.canonical_name || null;
+    const entity = state.lastQa?.entity || null;
+    state.imagePreset = entity?.canonical_name || null;
+    resetImageFilters();
+    if (entity?.node_id) {
+      state.imageFilters.disease = entity;
+      $("diseaseId").value = entity.node_id;
+      $("diseaseSearch").value = nodeLabel(entity);
+      renderImageActiveFilters();
+    }
     loadImages();
   });
   $("refreshStats").addEventListener("click", loadStats);
@@ -1343,6 +1505,7 @@ function bootstrapActiveTab() {
 document.addEventListener("DOMContentLoaded", () => {
   $("safetyNotice").textContent = SAFETY_NOTICE;
   bindEvents();
+  renderImageActiveFilters();
   buildDemoCases();
   bootstrapActiveTab();
   refreshHealth();

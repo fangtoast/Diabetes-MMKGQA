@@ -195,3 +195,18 @@
 - 同步到 `TASKS.md` 时，需要补充明确的任务 ID、验收标准和最小验证命令。
 - 如果执行过程中发现需要新增数据源、关系类型或问答意图，必须同步对应的 manifest、本体、架构或 intent 配置。
 - 完成实现后，状态只能在验证通过并记录证据后改为 `DONE`。
+
+## 6. 本轮补充执行记录：医学影像检索体验
+
+- 执行任务：`TASKS.md` 中 `FUP-ROUND-002`。
+- 对应问题：FUP-004/FUP-005 的医学影像页内容与检索体验补充。
+- 用户反馈：实际使用时往往不知道 `Disease ID`、`ImageGrade ID`、`Dataset ID` 或 `DataSplit ID`，可能只知道“糖尿病视网膜病变”“糖网”“RetinaMNIST+”“No_DR”等自然名称。
+- 已实现调整：医学影像页主流程改为疾病、数据集、影像分级、数据拆分四组可搜索选择器；点击候选后自动填入隐藏 ID 并检索；已选条件显示为可移除标签；原始 ID 输入保留在“高级 ID 筛选”中。
+- 后端调整：复用 `/entities/search`，并增强 `糖网` 等疾病别名搜索排序，使 C 层且带影像关系的疾病节点优先返回；`/images/search` 接口保持兼容。
+- 验证结果：`糖网` 能返回 C 层 RetinaMNIST 相关疾病候选；使用返回的 `node_id` 调用 `/images/search` 能返回 RetinaMNIST+ 影像；`RetinaMNIST` 与 `No_DR` 能分别命中 Dataset 与 ImageGrade。
+- 验证命令：
+  ```powershell
+  .\.venv\Scripts\python.exe -m pytest tests\test_portable_backend.py tests\test_api_endpoints.py tests\test_frontend_graph_ui.py -q
+  node --check frontend\app.js
+  .\scripts\run.ps1 verify
+  ```

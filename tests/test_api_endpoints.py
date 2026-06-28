@@ -66,14 +66,25 @@ def _build_api_fixture(tmp_path: Path) -> tuple[Path, Path]:
                 "node_id": "d1",
                 "node_type": "Disease",
                 "canonical_name": "diabetes",
+                "aliases": "",
                 "knowledge_layer": "C",
                 "source_ids": "manual",
+                "kg_version": "0.2.0",
+            },
+            {
+                "node_id": "d_retina",
+                "node_type": "Disease",
+                "canonical_name": "糖尿病视网膜病变",
+                "aliases": "糖网;DR",
+                "knowledge_layer": "C",
+                "source_ids": "retinamnist",
                 "kg_version": "0.2.0",
             },
             {
                 "node_id": "s1",
                 "node_type": "Symptom",
                 "canonical_name": "thirst",
+                "aliases": "",
                 "knowledge_layer": "A",
                 "source_ids": "manual",
                 "kg_version": "0.2.0",
@@ -82,6 +93,7 @@ def _build_api_fixture(tmp_path: Path) -> tuple[Path, Path]:
                 "node_id": "i1",
                 "node_type": "Image",
                 "canonical_name": "retina sample",
+                "aliases": "",
                 "knowledge_layer": "C",
                 "source_ids": "retina",
                 "kg_version": "0.2.0",
@@ -90,6 +102,7 @@ def _build_api_fixture(tmp_path: Path) -> tuple[Path, Path]:
                 "node_id": "g1",
                 "node_type": "ImageGrade",
                 "canonical_name": "No_DR",
+                "aliases": "",
                 "knowledge_layer": "C",
                 "source_ids": "retina",
                 "kg_version": "0.2.0",
@@ -98,6 +111,7 @@ def _build_api_fixture(tmp_path: Path) -> tuple[Path, Path]:
                 "node_id": "ds1",
                 "node_type": "Dataset",
                 "canonical_name": "RetinaMNIST+",
+                "aliases": "RetinaMNIST",
                 "knowledge_layer": "C",
                 "source_ids": "retina",
                 "kg_version": "0.2.0",
@@ -106,12 +120,13 @@ def _build_api_fixture(tmp_path: Path) -> tuple[Path, Path]:
                 "node_id": "sp1",
                 "node_type": "DataSplit",
                 "canonical_name": "train",
+                "aliases": "",
                 "knowledge_layer": "C",
                 "source_ids": "retina",
                 "kg_version": "0.2.0",
             },
         ],
-        fieldnames=["node_id", "node_type", "canonical_name", "knowledge_layer", "source_ids", "kg_version"],
+        fieldnames=["node_id", "node_type", "canonical_name", "aliases", "knowledge_layer", "source_ids", "kg_version"],
     )
     _write_csv(
         processed / "edges.csv",
@@ -134,6 +149,20 @@ def _build_api_fixture(tmp_path: Path) -> tuple[Path, Path]:
                 "head_id": "i1",
                 "tail_id": "d1",
                 "edge_id": "e2",
+                "relation": "IMAGE_ASSOCIATED_WITH",
+                "source_id": "retina",
+                "extraction_method": "manual",
+                "confidence": "1.0",
+                "knowledge_layer": "C",
+                "kg_version": "0.2.0",
+                "evidence_id": "ev2",
+                "raw_relation": "IMAGE_ASSOCIATED_WITH",
+                "normalized_relation": "IMAGE_ASSOCIATED_WITH",
+            },
+            {
+                "head_id": "i1",
+                "tail_id": "d_retina",
+                "edge_id": "e2b",
                 "relation": "IMAGE_ASSOCIATED_WITH",
                 "source_id": "retina",
                 "extraction_method": "manual",
@@ -258,7 +287,7 @@ def test_api_health_ready_with_portable_backend(tmp_path: Path):
     payload = response.json()
     assert payload["backend_ready"] is True
     assert payload["status"] == "ready"
-    assert payload["summary"]["node_count"] == 6
+    assert payload["summary"]["node_count"] == 7
 
 
 def test_api_health_blocked_without_backend(tmp_path: Path):
@@ -300,6 +329,19 @@ def test_api_qa_and_search_endpoints(tmp_path: Path):
     assert legacy_search_body["items"][0]["canonical_name"] == "diabetes"
     assert "课程演示、非临床诊断" in legacy_search_body["safety_notice"]
 
+    retina_search = client.get("/entities/search", params={"query": "糖网", "node_types": "Disease", "limit": 10})
+    assert retina_search.status_code == 200
+    retina_body = retina_search.json()
+    assert retina_body["items"][0]["node_id"] == "d_retina"
+
+    dataset_search = client.get("/entities/search", params={"query": "RetinaMNIST", "node_types": "Dataset", "limit": 10})
+    assert dataset_search.status_code == 200
+    assert dataset_search.json()["items"][0]["node_id"] == "ds1"
+
+    grade_search = client.get("/entities/search", params={"query": "No_DR", "node_types": "ImageGrade", "limit": 10})
+    assert grade_search.status_code == 200
+    assert grade_search.json()["items"][0]["node_id"] == "g1"
+
     graph = client.get("/graph/subgraph", params={"center_node_id": "d1", "max_hops": 2})
     assert graph.status_code == 200
     graph_body = graph.json()
@@ -339,6 +381,10 @@ def test_api_qa_and_search_endpoints(tmp_path: Path):
     assert source_images_body["count"] == 1
     assert source_images_body["images"][0]["source_id"] == "retinamnist"
 
+    retina_images = client.get("/images/search", params={"disease_id": retina_body["items"][0]["node_id"], "limit": 5})
+    assert retina_images.status_code == 200
+    assert retina_images.json()["count"] == 1
+
     preview = client.get("/images/i1/preview.png")
     assert preview.status_code == 200
     assert preview.headers["content-type"] == "image/png"
@@ -353,8 +399,8 @@ def test_api_images_search_and_stats_require_backend(tmp_path: Path):
     stats = client.get("/stats")
     assert stats.status_code == 200
     stats_body = stats.json()
-    assert stats_body["node_count"] == 6
-    assert stats_body["edge_count"] == 5
+    assert stats_body["node_count"] == 7
+    assert stats_body["edge_count"] == 6
     assert "课程演示、非临床诊断" in stats_body["safety_notice"]
 
     details = client.get("/stats/details", params={"kind": "images", "limit": 5})
@@ -370,7 +416,7 @@ def test_api_images_search_and_stats_require_backend(tmp_path: Path):
     evidence_details = client.get("/stats/details", params={"kind": "evidence_claims", "limit": 5})
     assert evidence_details.status_code == 200
     evidence_body = evidence_details.json()
-    assert evidence_body["count"] == 5
+    assert evidence_body["count"] == 6
     assert evidence_body["items"][0]["evidence_id"]
     assert "head_name" in evidence_body["items"][0]
 

@@ -118,3 +118,4 @@ This ledger is the current TODO source. The long-form roadmap is
 | ID | Status | Task | Acceptance criteria |
 |---|---|---|---|
 | FUP-ROUND-001 | DONE | Resolve Zhang Xinyuan follow-up QA/UI issues | FUP-000/001/002/003/004/006 are implemented; FUP-005 is merged into FUP-004; Chinese colloquial QA, deterministic natural answers, image presets, stats detail drilldown, and provenance fields are tested; `run.ps1 kg` and `run.ps1 verify` pass with the local `.venv`. |
+| FUP-ROUND-002 | DONE | Make medical image retrieval searchable without graph IDs | Image Retrieval uses searchable Disease/Dataset/ImageGrade/DataSplit selectors plus removable active-filter chips; raw ID inputs remain available under Advanced filters; `/entities/search` handles `糖网`, `RetinaMNIST`, and `No_DR` for selector workflows; selecting the returned disease ID can retrieve image cards with provenance; targeted tests and `run.ps1 verify` pass. |

@@ -971,7 +971,7 @@ body.inspector-collapsed .inspector {
 
 #imagesPanel.panel-view.is-active {
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
   height: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -994,6 +994,118 @@ body.inspector-collapsed .inspector {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.image-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.image-selector {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: rgba(18, 19, 21, 0.48);
+}
+
+.image-selector label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.selector-results {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 172px;
+  overflow: auto;
+}
+
+.selector-result {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--surface-1);
+  text-align: left;
+}
+
+.selector-result:hover,
+.selector-result:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.selector-result strong,
+.selector-result span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.selector-result strong {
+  font-size: 0.88rem;
+}
+
+.selector-result span {
+  color: var(--faint);
+  font-size: 0.74rem;
+}
+
+.active-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 30px;
+  align-items: center;
+}
+
+.filter-empty {
+  color: var(--faint);
+  font-size: 0.82rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #1f2326;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.filter-chip span {
+  overflow-wrap: anywhere;
+}
+
+.filter-chip strong {
+  color: var(--faint);
+  font-size: 0.95rem;
+}
+
+.image-advanced {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: rgba(18, 19, 21, 0.42);
+}
+
+.image-advanced summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.image-advanced .filter-grid {
+  padding: 0 10px 10px;
 }
 
 .image-preset {
@@ -1292,6 +1404,7 @@ body.inspector-collapsed .inspector {
   .qa-form,
   .graph-toolbar,
   .graph-settings,
+  .image-selector-grid,
   .filter-grid {
     grid-template-columns: 1fr;
   }
